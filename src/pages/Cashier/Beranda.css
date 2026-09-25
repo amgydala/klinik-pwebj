@@ -1,0 +1,99 @@
+.page-content {
+  padding: 20px;
+}
+
+.greeting {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.stat-cards {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  padding: 16px 20px;
+  border-left: 4px solid;
+}
+
+.border-warning { border-left-color: #eab308; }
+.border-success { border-left-color: #22c55e; }
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.stat-caption {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.table-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.table-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  background-color: #f8fafc;
+}
+
+td {
+  padding: 10px 12px;
+  font-size: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.btn-buat-tagihan {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background-color: #22c55e;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  margin-right: 6px;
+}
+
+.btn-lihat-soap {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background-color: #3b82f6;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+}
