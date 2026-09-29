@@ -7,6 +7,9 @@ import TagihanBaru from "./pages/Cashier/TagihanBaru";
 
 // Apoteker
 import ApotekerBeranda from "./pages/Apoteker/Beranda";
+import InventarisObat from "./pages/Apoteker/InventarisObat";
+import ResepMasuk from "./pages/Apoteker/ResepMasuk";
+import RiwayatTransaksi from "./pages/Apoteker/RiwayatTransaksi";
 
 function App() {
   return (
@@ -21,6 +24,9 @@ function App() {
 
         {/* Apoteker */}
         <Route path="/apoteker/beranda" element={<ApotekerBeranda />} />
+        <Route path="/apoteker/inventaris-obat" element={<InventarisObat />} />
+        <Route path="/apoteker/resep-masuk" element={<ResepMasuk />} />
+        <Route path="/apoteker/riwayat-transaksi" element={<RiwayatTransaksi />} />
       </Routes>
     </BrowserRouter>
   );
