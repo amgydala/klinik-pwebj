@@ -8,6 +8,7 @@ import TagihanBaru from "./pages/Cashier/TagihanBaru";
 // Apoteker
 import ApotekerBeranda from "./pages/Apoteker/Beranda";
 import InventarisObat from "./pages/Apoteker/InventarisObat";
+import TambahObat from "./pages/Apoteker/TambahObat";
 import ResepMasuk from "./pages/Apoteker/ResepMasuk";
 import RiwayatTransaksi from "./pages/Apoteker/RiwayatTransaksi";
 
@@ -25,6 +26,7 @@ function App() {
         {/* Apoteker */}
         <Route path="/apoteker/beranda" element={<ApotekerBeranda />} />
         <Route path="/apoteker/inventaris-obat" element={<InventarisObat />} />
+        <Route path="/apoteker/tambah-obat" element={<TambahObat />} />
         <Route path="/apoteker/resep-masuk" element={<ResepMasuk />} />
         <Route path="/apoteker/riwayat-transaksi" element={<RiwayatTransaksi />} />
       </Routes>
