@@ -7,6 +7,7 @@ import "./ResepMasuk.css";
 const apotekerMenu = [
   { path: "/apoteker/beranda", label: "Beranda" },
   { path: "/apoteker/inventaris-obat", label: "Inventaris Obat" },
+  { path: "/apoteker/tambah-obat", label: "Tambah Obat" },
   { path: "/apoteker/resep-masuk", label: "Resep Masuk" },
   { path: "/apoteker/riwayat-transaksi", label: "Riwayat Transaksi" },
   { path: "/apoteker/pengaturan", label: "Pengaturan" },
@@ -69,9 +70,9 @@ function ResepMasuk() {
   };
 
   return (
-    <div style={{ display: "flex" }}>
+    <div style={{ display: "flex", height: "100vh", maxHeight: "100dvh" }}>
       <Sidebar menuItems={apotekerMenu} />
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
         <Header userName="Apoteker Sinta" />
         <div className="page-content">
           <div className="stat-cards">
