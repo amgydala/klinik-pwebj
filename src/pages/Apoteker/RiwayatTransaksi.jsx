@@ -36,7 +36,11 @@ function RiwayatTransaksi() {
     <div style={{ display: "flex", height: "100vh" }}>
       <Sidebar menuItems={apotekerMenu} />
       <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName="Apoteker Sinta" />
+        <Header 
+        userName="Apoteker Sinta"
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm} 
+        />
         <div className="page-content">
           <div className="stat-cards">
             <div className="stat-card border-accent">
@@ -56,13 +60,6 @@ function RiwayatTransaksi() {
           <div className="table-card">
             <div className="table-header-row">
               <div className="table-title">Riwayat Transaksi</div>
-              <input
-                type="text"
-                placeholder="Cari nama obat..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="search-input"
-              />
             </div>
 
             <table>
