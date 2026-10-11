@@ -112,3 +112,22 @@
   cursor: pointer;
   font-weight: 500;
 }
+
+.rincian-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.rincian-table th {
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 11px;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.rincian-table td {
+  padding: 6px 8px;
+}

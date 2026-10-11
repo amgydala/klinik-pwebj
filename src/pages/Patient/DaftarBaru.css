@@ -1,0 +1,146 @@
+.pasien-content {
+  padding: 20px;
+}
+
+.pasien-greeting {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.pasien-subgreeting {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 20px 0;
+}
+
+.pasien-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 760px;
+}
+
+.pasien-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.pasien-form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.pasien-form-group {
+  flex: 1;
+  margin-bottom: 16px;
+}
+
+.pasien-form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.pasien-form-group input,
+.pasien-form-group select {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.pasien-rekomendasi {
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.pasien-rekomendasi button {
+  margin-left: 10px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #1d4ed8;
+  background: white;
+  color: #1d4ed8;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.pasien-slot-box {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.pasien-slot-title {
+  background: #f1f5f9;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pasien-slot-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  border-top: 1px solid #e2e8f0;
+  cursor: pointer;
+  margin: 0;
+}
+
+.pasien-slot-row.penuh {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Radio button harus dikembalikan ke ukuran normal (ada aturan global input yang melebarkannya) */
+.pasien-slot-row input[type="radio"] {
+  width: auto;
+  padding: 0;
+  margin: 0;
+}
+
+.pasien-slot-jam {
+  flex: 1;
+}
+
+.pasien-slot-kuota {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.pasien-action-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.pasien-btn-batal {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+}
+
+.pasien-btn-submit {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background-color: #1e293b;
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+}

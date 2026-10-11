@@ -1,0 +1,134 @@
+.pasien-content {
+  padding: 20px;
+}
+
+.pasien-page-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.pasien-greeting {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.pasien-subgreeting {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+
+.pasien-btn-cetak {
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  background-color: #475569;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pasien-visit-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+  max-width: 760px;
+}
+
+.pasien-visit-head {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.pasien-visit-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #1e293b;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.pasien-visit-date {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.pasien-visit-meta {
+  font-size: 13px;
+  color: #475569;
+}
+
+.pasien-box {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.pasien-box:last-child {
+  margin-bottom: 0;
+}
+
+.pasien-box-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.pasien-soap {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  row-gap: 6px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.pasien-soap dt {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.pasien-soap dd {
+  margin: 0;
+}
+
+.pasien-resep-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pasien-resep-table th {
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.pasien-resep-table td {
+  padding: 6px 8px;
+  font-size: 14px;
+}
+
+.pasien-empty {
+  padding: 24px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+}

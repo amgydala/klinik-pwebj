@@ -13,10 +13,44 @@ const apotekerMenu = [
   { path: "/apoteker/pengaturan", label: "Pengaturan" },
 ];
 
+const hargaObat = {
+  "Amoxicillin 250mg": 3000,
+  "Paracetamol 500mg": 2500,
+  "Ibuprofen 400mg": 4000,
+  "Cetirizine 10mg": 1800,
+};
+
 const dataResepAwal = [
-  { id: 1, pasien: "Budi Santoso", dokter: "dr. Andini", obat: "Amoxicillin, Paracetamol", status: "Belum Diproses", penjamin: "Umum", totalBayar: null },
-  { id: 2, pasien: "Siti Aminah", dokter: "dr. Rahman", obat: "Ibuprofen 400mg", status: "Sedang Diproses", penjamin: "BPJS", totalBayar: null },
-  { id: 3, pasien: "Made Wirawan", dokter: "dr. Andini", obat: "Paracetamol 500mg", status: "Sudah Diproses", penjamin: "Umum", totalBayar: 45000 },
+  {
+    id: 1,
+    pasien: "Budi Santoso",
+    dokter: "dr. Andini",
+    penjamin: "Umum",
+    status: "Belum Diproses",
+    obat: [
+      { nama: "Amoxicillin 250mg", jumlah: 10 },
+      { nama: "Paracetamol 500mg", jumlah: 6 },
+    ],
+    totalBayar: null,
+  },
+  {
+    id: 2,
+    pasien: "Siti Aminah",
+    dokter: "dr. Rahman",
+    penjamin: "BPJS",
+    status: "Sedang Diproses",
+    obat: [{ nama: "Ibuprofen 400mg", jumlah: 6 }],
+    totalBayar: null,
+  },
+  {
+    id: 3,
+    pasien: "Made Wirawan",
+    dokter: "dr. Andini",
+    penjamin: "Umum",
+    status: "Sudah Diproses",
+    obat: [{ nama: "Paracetamol 500mg", jumlah: 15 }],
+    totalBayar: 37500,
+  },
 ];
 
 const badgeVariant = {
@@ -31,42 +65,31 @@ const aksiLabel = {
   "Sudah Diproses": "Lihat",
 };
 
+const hitungTotal = (daftarObat) =>
+  daftarObat.reduce((sum, item) => sum + (hargaObat[item.nama] || 0) * item.jumlah, 0);
+
 function ResepMasuk() {
   const [dataResep, setDataResep] = useState(dataResepAwal);
   const [modalResep, setModalResep] = useState(null);
-  const [inputTotal, setInputTotal] = useState("");
 
   const hitungJumlah = (status) =>
     dataResep.filter((r) => r.status === status).length;
 
   const handleAksiClick = (resep) => {
     if (resep.status === "Belum Diproses") {
-      // Langsung maju ke "Sedang Diproses", tanpa perlu input apapun
       setDataResep((prev) =>
-        prev.map((r) =>
-          r.id === resep.id ? { ...r, status: "Sedang Diproses" } : r
-        )
+        prev.map((r) => (r.id === resep.id ? { ...r, status: "Sedang Diproses" } : r))
       );
-    } else if (resep.status === "Sedang Diproses") {
-      // Buka modal pembayaran dulu sebelum status final
-      setModalResep(resep);
-      setInputTotal("");
     } else {
-      // "Sudah Diproses" -> cuma lihat detail, buka modal versi read-only
       setModalResep(resep);
     }
   };
 
   const konfirmasiSelesai = () => {
+    const total = modalResep.penjamin === "BPJS" ? 0 : hitungTotal(modalResep.obat);
     setDataResep((prev) =>
       prev.map((r) =>
-        r.id === modalResep.id
-          ? {
-              ...r,
-              status: "Sudah Diproses",
-              totalBayar: modalResep.penjamin === "BPJS" ? 0 : Number(inputTotal),
-            }
-          : r
+        r.id === modalResep.id ? { ...r, status: "Sudah Diproses", totalBayar: total } : r
       )
     );
     setModalResep(null);
@@ -101,6 +124,7 @@ function ResepMasuk() {
                   <th>Nama Pasien</th>
                   <th>Dokter Pengirim</th>
                   <th>Obat Diresepkan</th>
+                  <th>Jumlah</th>
                   <th>Penjamin</th>
                   <th>Status</th>
                   <th>Aksi</th>
@@ -111,7 +135,16 @@ function ResepMasuk() {
                   <tr key={resep.id}>
                     <td>{resep.pasien}</td>
                     <td>{resep.dokter}</td>
-                    <td>{resep.obat}</td>
+                    <td>
+                      {resep.obat.map((o) => (
+                        <div key={o.nama}>{o.nama}</div>
+                      ))}
+                    </td>
+                    <td>
+                      {resep.obat.map((o) => (
+                        <div key={o.nama}>{o.jumlah}</div>
+                      ))}
+                    </td>
                     <td>{resep.penjamin}</td>
                     <td>
                       <Badge text={resep.status} variant={badgeVariant[resep.status]} />
@@ -141,34 +174,42 @@ function ResepMasuk() {
 
             <div className="modal-info">
               <div><strong>Pasien:</strong> {modalResep.pasien}</div>
-              <div><strong>Obat:</strong> {modalResep.obat}</div>
               <div><strong>Penjamin:</strong> {modalResep.penjamin}</div>
             </div>
 
-            {modalResep.status === "Sudah Diproses" ? (
-              <div className="total-row">
-                <span>Total Dibayar</span>
-                <span className="total-value">
-                  {modalResep.penjamin === "BPJS"
-                    ? "Ditanggung BPJS"
-                    : `Rp ${modalResep.totalBayar?.toLocaleString("id-ID")}`}
-                </span>
-              </div>
-            ) : modalResep.penjamin === "BPJS" ? (
-              <div className="bpjs-note">
-                Pasien BPJS — tidak ada pembayaran langsung. Klaim diproses terpisah ke BPJS.
-              </div>
-            ) : (
-              <div className="form-group">
-                <label>Total Harga Obat</label>
-                <input
-                  type="number"
-                  placeholder="Contoh: 45000"
-                  value={inputTotal}
-                  onChange={(e) => setInputTotal(e.target.value)}
-                />
-              </div>
-            )}
+            <table className="rincian-table">
+              <thead>
+                <tr>
+                  <th>Obat</th>
+                  <th>Jumlah</th>
+                  <th style={{ textAlign: "right" }}>Harga</th>
+                </tr>
+              </thead>
+              <tbody>
+                {modalResep.obat.map((item) => (
+                  <tr key={item.nama}>
+                    <td>{item.nama}</td>
+                    <td>{item.jumlah}</td>
+                    <td style={{ textAlign: "right" }}>
+                      Rp {((hargaObat[item.nama] || 0) * item.jumlah).toLocaleString("id-ID")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="total-row">
+              <span>Total {modalResep.penjamin === "BPJS" ? "" : "Dibayar"}</span>
+              <span className="total-value">
+                {modalResep.penjamin === "BPJS"
+                  ? "Ditanggung BPJS"
+                  : `Rp ${(
+                      modalResep.status === "Sudah Diproses"
+                        ? modalResep.totalBayar
+                        : hitungTotal(modalResep.obat)
+                    ).toLocaleString("id-ID")}`}
+              </span>
+            </div>
 
             <div className="action-row">
               <button className="btn-batal" onClick={() => setModalResep(null)}>

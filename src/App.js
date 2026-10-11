@@ -12,6 +12,12 @@ import TambahObat from "./pages/Apoteker/TambahObat";
 import ResepMasuk from "./pages/Apoteker/ResepMasuk";
 import RiwayatTransaksi from "./pages/Apoteker/RiwayatTransaksi";
 
+// Patient
+import PatientBeranda from "./pages/Patient/Beranda";
+import PatientDaftarBaru from "./pages/Patient/DaftarBaru";
+import PatientRiwayatMedis from "./pages/Patient/RiwayatMedis";
+import PatientTagihan from "./pages/Patient/TagihanSaya";
+
 function App() {
   return (
     <BrowserRouter>
@@ -29,6 +35,12 @@ function App() {
         <Route path="/apoteker/tambah-obat" element={<TambahObat />} />
         <Route path="/apoteker/resep-masuk" element={<ResepMasuk />} />
         <Route path="/apoteker/riwayat-transaksi" element={<RiwayatTransaksi />} />
+
+        {/* Patient */}
+        <Route path="/patient/beranda" element={<PatientBeranda />} />
+        <Route path="/patient/daftar-baru" element={<PatientDaftarBaru />} />
+        <Route path="/patient/riwayat-medis" element={<PatientRiwayatMedis />} />
+        <Route path="/patient/tagihan" element={<PatientTagihan />} />
       </Routes>
     </BrowserRouter>
   );

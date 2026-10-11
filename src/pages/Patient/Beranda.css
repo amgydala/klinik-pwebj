@@ -1,0 +1,128 @@
+.pasien-content {
+  padding: 20px;
+}
+
+.pasien-greeting {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.pasien-subgreeting {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 20px 0;
+}
+
+.pasien-top-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.pasien-top-row .pasien-card {
+  flex: 1;
+}
+
+.pasien-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.pasien-top-row .pasien-card {
+  margin-bottom: 0;
+}
+
+.pasien-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.pasien-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.pasien-info-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.pasien-info-value {
+  font-size: 14px;
+}
+
+.pasien-antrean-box {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.pasien-antrean-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.pasien-antrean-jam {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.pasien-antrean-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  padding: 4px 0;
+}
+
+.pasien-antrean-nomor {
+  font-weight: 700;
+}
+
+.pasien-btn-daftar {
+  display: block;
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #475569;
+  color: white;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.pasien-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.pasien-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  background-color: #f8fafc;
+}
+
+.pasien-table td {
+  padding: 10px 12px;
+  font-size: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.pasien-empty {
+  padding: 24px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+}
