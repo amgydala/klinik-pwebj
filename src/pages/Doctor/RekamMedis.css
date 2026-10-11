@@ -1,0 +1,261 @@
+.rekam-content {
+  padding: 20px;
+}
+
+.rekam-title {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.rekam-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 20px 0;
+}
+
+.rekam-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.rekam-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.rekam-card-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.rekam-filter {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.rekam-filter input {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+  width: auto;
+}
+
+.rekam-btn-reset {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.rekam-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rekam-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  background-color: #f8fafc;
+}
+
+.rekam-table td {
+  padding: 10px 12px;
+  font-size: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.rekam-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+  font-size: 13px;
+  margin-right: 6px;
+}
+
+.rekam-kosong {
+  padding: 24px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.rekam-kosong-kecil {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.rekam-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.rekam-modal {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  width: 560px;
+  max-width: 92%;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.rekam-modal-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.rekam-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.rekam-modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.rekam-modal-info {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 14px 0;
+}
+
+.rekam-info {
+  margin-bottom: 14px;
+}
+
+.rekam-info > div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  padding: 7px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.rekam-info span {
+  color: #64748b;
+}
+
+.rekam-box {
+  background: #f1f5f9;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+
+.rekam-box-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.rekam-soap {
+  display: grid;
+  grid-template-columns: 24px 1fr;
+  row-gap: 6px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.rekam-soap dt {
+  font-weight: 700;
+}
+
+.rekam-soap dd {
+  margin: 0;
+}
+
+.rekam-resep-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.rekam-resep-table th {
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.rekam-resep-table td {
+  padding: 6px 8px;
+  font-size: 14px;
+}
+
+.rekam-group {
+  margin-bottom: 12px;
+}
+
+.rekam-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.rekam-group input,
+.rekam-group textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  font-size: 14px;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.rekam-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.rekam-btn-batal {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  cursor: pointer;
+}
+
+.rekam-btn-simpan {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background-color: #1e293b;
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+}

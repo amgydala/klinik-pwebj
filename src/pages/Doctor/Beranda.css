@@ -1,0 +1,118 @@
+.dokter-content {
+  padding: 20px;
+}
+
+.dokter-greeting {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.dokter-subgreeting {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 20px 0;
+}
+
+.dokter-top-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.dokter-top-row .dokter-card {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.dokter-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.dokter-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.dokter-card-date {
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 14px;
+}
+
+.dokter-stat-list {
+  margin-bottom: 14px;
+}
+
+.dokter-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dokter-aktif-box {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.dokter-aktif-nomor {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.dokter-aktif-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  padding: 4px 0;
+}
+
+.dokter-btn-link {
+  display: block;
+  text-align: center;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #475569;
+  color: white;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.dokter-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.dokter-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  background-color: #f8fafc;
+}
+
+.dokter-table td {
+  padding: 10px 12px;
+  font-size: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dokter-kosong {
+  padding: 24px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+}

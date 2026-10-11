@@ -18,6 +18,13 @@ import PatientDaftarBaru from "./pages/Patient/DaftarBaru";
 import PatientRiwayatMedis from "./pages/Patient/RiwayatMedis";
 import PatientTagihan from "./pages/Patient/TagihanSaya";
 
+// Doctor
+import DoctorBeranda from "./pages/Doctor/Beranda";
+import DoctorAntrianPasien from "./pages/Doctor/AntrianPasien";
+import DoctorJadwalPraktik from "./pages/Doctor/JadwalPraktik";
+import DoctorFormSOAP from "./pages/Doctor/FormSOAP";
+import DoctorRekamMedis from "./pages/Doctor/RekamMedis";
+
 function App() {
   return (
     <BrowserRouter>
@@ -41,6 +48,13 @@ function App() {
         <Route path="/patient/daftar-baru" element={<PatientDaftarBaru />} />
         <Route path="/patient/riwayat-medis" element={<PatientRiwayatMedis />} />
         <Route path="/patient/tagihan" element={<PatientTagihan />} />
+
+        {/* Doctor */}
+        <Route path="/doctor/beranda" element={<DoctorBeranda />} />
+        <Route path="/doctor/antrian-pasien" element={<DoctorAntrianPasien />} />
+        <Route path="/doctor/jadwal-praktik" element={<DoctorJadwalPraktik />} />
+        <Route path="/doctor/form-soap" element={<DoctorFormSOAP />} />
+        <Route path="/doctor/rekam-medis" element={<DoctorRekamMedis />} />
       </Routes>
     </BrowserRouter>
   );
