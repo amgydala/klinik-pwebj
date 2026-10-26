@@ -3,25 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
+import { doctorMenu, doctorNama, antreanDokterAwal } from "../../data/mockData";
 import "./AntrianPasien.css";
-
-const doctorMenu = [
-  { path: "/doctor/beranda", label: "Beranda" },
-  { path: "/doctor/jadwal-praktik", label: "Jadwal Praktik" },
-  { path: "/doctor/antrian-pasien", label: "Antrian Pasien" },
-  { path: "/doctor/rekam-medis", label: "Rekam Medis" },
-  { path: "/doctor/pengaturan", label: "Pengaturan" },
-];
-
-// Data dummy, nanti diganti dari API
-const antreanAwal = [
-  { id: 1, tanggal: "2026-09-21", noAntrean: "A-01", nama: "Made Wirawan", jam: "08:00", keluhan: "Demam dan batuk", status: "Selesai" },
-  { id: 2, tanggal: "2026-09-21", noAntrean: "A-02", nama: "Ayu Lestari", jam: "08:30", keluhan: "Pusing berkepanjangan", status: "Selesai" },
-  { id: 3, tanggal: "2026-09-21", noAntrean: "A-03", nama: "Budi Santoso", jam: "09:15", keluhan: "Nyeri ulu hati", status: "Sedang Diperiksa" },
-  { id: 4, tanggal: "2026-09-21", noAntrean: "A-04", nama: "Siti Aminah", jam: "09:30", keluhan: "Sakit kepala", status: "Menunggu" },
-  { id: 5, tanggal: "2026-09-21", noAntrean: "A-05", nama: "Komang Adi", jam: "10:00", keluhan: "Kontrol tekanan darah", status: "Menunggu" },
-  { id: 6, tanggal: "2026-09-22", noAntrean: "A-01", nama: "Putu Ratna", jam: "08:00", keluhan: "Batuk pilek", status: "Menunggu" },
-];
 
 const badgeVariant = {
   Menunggu: "warning",
@@ -39,7 +22,7 @@ const formatTanggal = (tanggal) =>
 
 function AntrianPasien() {
   const navigate = useNavigate();
-  const [antrean, setAntrean] = useState(antreanAwal);
+  const [antrean, setAntrean] = useState(antreanDokterAwal);
   const [tanggal, setTanggal] = useState("2026-09-21");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("Semua");
@@ -99,7 +82,7 @@ function AntrianPasien() {
       <Sidebar menuItems={doctorMenu} />
       <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
         <Header
-          userName="dr. Andini"
+          userName={doctorNama}
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
           searchPlaceholder="Cari nama pasien..."

@@ -2,56 +2,8 @@ import { useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
+import { apotekerMenu, apotekerNama, hargaObat, dataResepAwal } from "../../data/mockData";
 import "./ResepMasuk.css";
-
-const apotekerMenu = [
-  { path: "/apoteker/beranda", label: "Beranda" },
-  { path: "/apoteker/inventaris-obat", label: "Inventaris Obat" },
-  { path: "/apoteker/tambah-obat", label: "Tambah Obat" },
-  { path: "/apoteker/resep-masuk", label: "Resep Masuk" },
-  { path: "/apoteker/riwayat-transaksi", label: "Riwayat Transaksi" },
-  { path: "/apoteker/pengaturan", label: "Pengaturan" },
-];
-
-const hargaObat = {
-  "Amoxicillin 250mg": 3000,
-  "Paracetamol 500mg": 2500,
-  "Ibuprofen 400mg": 4000,
-  "Cetirizine 10mg": 1800,
-};
-
-const dataResepAwal = [
-  {
-    id: 1,
-    pasien: "Budi Santoso",
-    dokter: "dr. Andini",
-    penjamin: "Umum",
-    status: "Belum Diproses",
-    obat: [
-      { nama: "Amoxicillin 250mg", jumlah: 10 },
-      { nama: "Paracetamol 500mg", jumlah: 6 },
-    ],
-    totalBayar: null,
-  },
-  {
-    id: 2,
-    pasien: "Siti Aminah",
-    dokter: "dr. Rahman",
-    penjamin: "BPJS",
-    status: "Sedang Diproses",
-    obat: [{ nama: "Ibuprofen 400mg", jumlah: 6 }],
-    totalBayar: null,
-  },
-  {
-    id: 3,
-    pasien: "Made Wirawan",
-    dokter: "dr. Andini",
-    penjamin: "Umum",
-    status: "Sudah Diproses",
-    obat: [{ nama: "Paracetamol 500mg", jumlah: 15 }],
-    totalBayar: 37500,
-  },
-];
 
 const badgeVariant = {
   "Belum Diproses": "danger",
@@ -99,7 +51,7 @@ function ResepMasuk() {
     <div style={{ display: "flex", height: "100vh" }}>
       <Sidebar menuItems={apotekerMenu} />
       <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName="Apoteker Sinta" />
+        <Header userName={apotekerNama} />
         <div className="page-content">
           <div className="stat-cards">
             <div className="stat-card border-danger">

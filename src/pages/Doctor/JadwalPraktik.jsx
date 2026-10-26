@@ -2,26 +2,11 @@ import { useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
+import { doctorMenu, doctorNama, jadwalPraktikAwal } from "../../data/mockData";
 import "./JadwalPraktik.css";
 
-const doctorMenu = [
-  { path: "/doctor/beranda", label: "Beranda" },
-  { path: "/doctor/jadwal-praktik", label: "Jadwal Praktik" },
-  { path: "/doctor/antrian-pasien", label: "Antrian Pasien" },
-  { path: "/doctor/rekam-medis", label: "Rekam Medis" },
-  { path: "/doctor/pengaturan", label: "Pengaturan" },
-];
-
-// Data dummy, nanti diganti dari API (diatur oleh Admin)
-const jadwalAwal = [
-  { id: 1, hari: "Senin", tanggal: "21 Sep 2026", jam: "08:00 - 12:00", kuota: 20, ruangan: "Poli Dalam - Ruang 2", keterangan: "", pengajuan: null },
-  { id: 2, hari: "Selasa", tanggal: "22 Sep 2026", jam: "08:00 - 12:00", kuota: 20, ruangan: "Poli Dalam - Ruang 2", keterangan: "", pengajuan: null },
-  { id: 3, hari: "Rabu", tanggal: "23 Sep 2026", jam: "13:00 - 16:00", kuota: 15, ruangan: "Poli Dalam - Ruang 2", keterangan: "Praktik sore", pengajuan: null },
-  { id: 4, hari: "Kamis", tanggal: "24 Sep 2026", jam: "08:00 - 12:00", kuota: 20, ruangan: "Poli Dalam - Ruang 2", keterangan: "", pengajuan: null },
-];
-
 function JadwalPraktik() {
-  const [jadwal, setJadwal] = useState(jadwalAwal);
+  const [jadwal, setJadwal] = useState(jadwalPraktikAwal);
   const [terpilihId, setTerpilihId] = useState(null);
   const [modalDetail, setModalDetail] = useState(false);
   const [modalAjukan, setModalAjukan] = useState(false);
@@ -56,7 +41,7 @@ function JadwalPraktik() {
     <div style={{ display: "flex", height: "100vh" }}>
       <Sidebar menuItems={doctorMenu} />
       <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName="dr. Andini" />
+        <Header userName={doctorNama} />
         <div className="jadwal-content">
           <h1 className="jadwal-title">Jadwal Praktik</h1>
           <p className="jadwal-subtitle">

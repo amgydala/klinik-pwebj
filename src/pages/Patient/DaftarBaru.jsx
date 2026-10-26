@@ -2,39 +2,15 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
+import {
+  patientNama,
+  patientMenu,
+  poliList,
+  dokterList,
+  slotList,
+  kataKunciPoli,
+} from "../../data/mockData";
 import "./DaftarBaru.css";
-
-const patientMenu = [
-  { path: "/patient/beranda", label: "Beranda" },
-  { path: "/patient/daftar-baru", label: "Daftar Baru" },
-  { path: "/patient/riwayat-medis", label: "Riwayat Medis" },
-  { path: "/patient/tagihan", label: "Tagihan Saya" },
-  { path: "/patient/pengaturan", label: "Pengaturan" },
-];
-
-// Data dummy, nanti diganti dari API
-const poliList = ["Poli Umum", "Poli Dalam", "Poli Anak", "Poli Gigi"];
-
-const dokterList = [
-  { id: 1, nama: "dr. Andini", poli: "Poli Dalam" },
-  { id: 2, nama: "dr. Rahman", poli: "Poli Umum" },
-  { id: 3, nama: "dr. Sari", poli: "Poli Anak" },
-  { id: 4, nama: "drg. Putra", poli: "Poli Gigi" },
-];
-
-const slotList = [
-  { id: 1, jam: "08:00 - 12:00", kuota: 5 },
-  { id: 2, jam: "12:01 - 16:00", kuota: 0 },
-  { id: 3, jam: "16:01 - 20:00", kuota: 8 },
-];
-
-// Rekomendasi poli berdasarkan kata kunci di keluhan (rule sederhana, bukan AI)
-const kataKunciPoli = [
-  { poli: "Poli Gigi", kata: ["gigi", "gusi", "sariawan"] },
-  { poli: "Poli Anak", kata: ["anak", "bayi", "balita"] },
-  { poli: "Poli Dalam", kata: ["perut", "maag", "lambung", "diare", "jantung", "tekanan darah", "diabetes"] },
-  { poli: "Poli Umum", kata: ["demam", "batuk", "pilek", "flu", "pusing", "sakit kepala"] },
-];
 
 const cariRekomendasi = (keluhan) => {
   const teks = keluhan.toLowerCase();
@@ -87,7 +63,7 @@ function DaftarBaru() {
     <div style={{ display: "flex", height: "100vh" }}>
       <Sidebar menuItems={patientMenu} />
       <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName="Budi Santoso" />
+        <Header userName={patientNama} />
         <div className="pasien-content">
           <h1 className="pasien-greeting">Daftar Kunjungan Baru</h1>
           <p className="pasien-subgreeting">

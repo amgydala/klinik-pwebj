@@ -2,22 +2,8 @@ import { useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
+import { apotekerMenu, apotekerNama, dataTransaksi } from "../../data/mockData";
 import "./RiwayatTransaksi.css";
-
-const apotekerMenu = [
-  { path: "/apoteker/beranda", label: "Beranda" },
-  { path: "/apoteker/inventaris-obat", label: "Inventaris Obat" },
-  { path: "/apoteker/tambah-obat", label: "Tambah Obat" },
-  { path: "/apoteker/resep-masuk", label: "Resep Masuk" },
-  { path: "/apoteker/riwayat-transaksi", label: "Riwayat Transaksi" },
-  { path: "/apoteker/pengaturan", label: "Pengaturan" },
-];
-
-const dataTransaksi = [
-  { tanggal: "20 Sep 2026", obat: "Amoxicillin 250mg", jumlah: "10 tablet", noResep: "RSP-0231", pasien: "Budi Santoso", penjamin: "Umum", total: 45000, statusBayar: "Lunas" },
-  { tanggal: "19 Sep 2026", obat: "Ibuprofen 400mg", jumlah: "6 tablet", noResep: "RSP-0228", pasien: "Siti Aminah", penjamin: "BPJS", total: 0, statusBayar: "Ditanggung BPJS" },
-  { tanggal: "18 Sep 2026", obat: "Paracetamol 500mg", jumlah: "15 tablet", noResep: "RSP-0219", pasien: "Made Wirawan", penjamin: "Umum", total: 75000, statusBayar: "Lunas" },
-];
 
 function RiwayatTransaksi() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,7 +23,7 @@ function RiwayatTransaksi() {
       <Sidebar menuItems={apotekerMenu} />
       <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
         <Header 
-        userName="Apoteker Sinta"
+        userName={apotekerNama}
         searchValue={searchTerm}
         onSearchChange={setSearchTerm} 
         />

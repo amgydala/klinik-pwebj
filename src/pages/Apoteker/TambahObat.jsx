@@ -1,26 +1,8 @@
 import { useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
+import { apotekerMenu, apotekerNama, obatTerdaftar, kategoriList, satuanList } from "../../data/mockData";
 import "./TambahObat.css";
-
-const apotekerMenu = [
-  { path: "/apoteker/beranda", label: "Beranda" },
-  { path: "/apoteker/inventaris-obat", label: "Inventaris Obat" },
-  { path: "/apoteker/tambah-obat", label: "Tambah Obat" },
-  { path: "/apoteker/resep-masuk", label: "Resep Masuk" },
-  { path: "/apoteker/riwayat-transaksi", label: "Riwayat Transaksi" },
-  { path: "/apoteker/pengaturan", label: "Pengaturan" },
-];
-
-const obatTerdaftar = [
-  "Amoxicillin 250mg",
-  "Paracetamol 500mg",
-  "Ibuprofen 400mg",
-  "Cetirizine 10mg",
-];
-
-const kategoriList = ["Antibiotik", "Analgesik", "Antihistamin", "Antasida", "Vitamin"];
-const satuanList = ["Tablet", "Kapsul", "Botol", "Strip", "Box", "Ampul"];
 
 function TambahObat() {
   const [mode, setMode] = useState("baru"); // "baru" atau "restock"
@@ -53,7 +35,7 @@ function TambahObat() {
     <div style={{ display: "flex", height: "100vh" }}>
       <Sidebar menuItems={apotekerMenu} />
       <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName="Apoteker Sinta" />
+        <Header userName={apotekerNama} />
         <div className="page-content">
           <div className="form-card">
             <div className="section-title">Tambah Obat</div>

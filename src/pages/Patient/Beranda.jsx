@@ -2,46 +2,23 @@ import { Link } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
+import {
+  patientNama,
+  patientMenu,
+  infoKesehatanPasien as infoKesehatan,
+  statusAntreanPasien as statusAntrean,
+  riwayatKunjunganPasien as riwayatKunjungan,
+} from "../../data/mockData";
 import "./Beranda.css";
-
-const patientMenu = [
-  { path: "/patient/beranda", label: "Beranda" },
-  { path: "/patient/daftar-baru", label: "Daftar Baru" },
-  { path: "/patient/riwayat-medis", label: "Riwayat Medis" },
-  { path: "/patient/tagihan", label: "Tagihan Saya" },
-  { path: "/patient/pengaturan", label: "Pengaturan" },
-];
-
-// Data dummy, nanti diganti dari API
-const infoKesehatan = {
-  noRekamMedis: "RM-000123",
-  penjamin: "BPJS",
-  noBpjs: "0001234567890",
-  golonganDarah: "O",
-  usia: "32 tahun",
-};
-
-const statusAntrean = {
-  status: "Menunggu Giliran",
-  jam: "12:00",
-  dokter: "dr. Andini",
-  tanggal: "21 September 2026",
-  noAntrean: "A-03",
-};
-
-const riwayatKunjungan = [
-  { id: 1, tanggal: "16 Sep 2026", poli: "Poli Dalam", dokter: "dr. Andini", diagnosa: "Gastritis", status: "Selesai" },
-  { id: 2, tanggal: "10 Agu 2026", poli: "Poli Umum", dokter: "dr. Rahman", diagnosa: "ISPA", status: "Selesai" },
-];
 
 function Beranda() {
   return (
     <div style={{ display: "flex", height: "100vh" }}>
       <Sidebar menuItems={patientMenu} />
       <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName="Budi Santoso" />
+        <Header userName={patientNama} />
         <div className="pasien-content">
-          <h1 className="pasien-greeting">Selamat datang, Budi Santoso</h1>
+          <h1 className="pasien-greeting">Selamat datang, {patientNama}</h1>
           <p className="pasien-subgreeting">
             Pantau kesehatan dan antrean kunjungan kamu di sini.
           </p>

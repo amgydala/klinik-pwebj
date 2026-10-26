@@ -1,57 +1,18 @@
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
+import {
+  patientNama,
+  patientMenu,
+  riwayatMedisPasien as riwayatMedis,
+} from "../../data/mockData";
 import "./RiwayatMedis.css";
-
-const patientMenu = [
-  { path: "/patient/beranda", label: "Beranda" },
-  { path: "/patient/daftar-baru", label: "Daftar Baru" },
-  { path: "/patient/riwayat-medis", label: "Riwayat Medis" },
-  { path: "/patient/tagihan", label: "Tagihan Saya" },
-  { path: "/patient/pengaturan", label: "Pengaturan" },
-];
-
-// Data dummy, nanti diganti dari API (diisi oleh Doctor page)
-const riwayatMedis = [
-  {
-    id: 1,
-    tanggal: "Senin, 16 September 2026",
-    dokter: "dr. Andini",
-    diagnosaUtama: "Gastritis",
-    soap: {
-      subjective: "Nyeri ulu hati sejak 3 hari, mual, nafsu makan menurun.",
-      objective: "TD 120/80, nadi 82x/menit, nyeri tekan epigastrium.",
-      assessment: "Gastritis akut.",
-      plan: "Terapi obat, hindari makanan pedas dan asam, kontrol bila belum membaik.",
-    },
-    resep: [
-      { nama: "Antasida Doen", jumlah: 10, aturan: "3x1 sebelum makan" },
-      { nama: "Omeprazole 20mg", jumlah: 7, aturan: "1x1 pagi hari" },
-    ],
-  },
-  {
-    id: 2,
-    tanggal: "Senin, 10 Agustus 2026",
-    dokter: "dr. Rahman",
-    diagnosaUtama: "ISPA",
-    soap: {
-      subjective: "Batuk dan pilek 4 hari, demam ringan.",
-      objective: "Suhu 37,8 C, faring hiperemis.",
-      assessment: "Infeksi saluran pernapasan atas.",
-      plan: "Obat simptomatik, perbanyak istirahat dan minum air.",
-    },
-    resep: [
-      { nama: "Paracetamol 500mg", jumlah: 10, aturan: "3x1 bila demam" },
-      { nama: "Cetirizine 10mg", jumlah: 5, aturan: "1x1 malam hari" },
-    ],
-  },
-];
 
 function RiwayatMedis() {
   return (
     <div style={{ display: "flex", height: "100vh" }}>
       <Sidebar menuItems={patientMenu} />
       <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName="Budi Santoso" />
+        <Header userName={patientNama} />
         <div className="pasien-content">
           <div className="pasien-page-head">
             <div>

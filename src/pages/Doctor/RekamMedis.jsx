@@ -1,67 +1,8 @@
 import { useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
+import { doctorMenu, doctorNama, rekamMedisDokterAwal } from "../../data/mockData";
 import "./RekamMedis.css";
-
-const doctorMenu = [
-  { path: "/doctor/beranda", label: "Beranda" },
-  { path: "/doctor/jadwal-praktik", label: "Jadwal Praktik" },
-  { path: "/doctor/antrian-pasien", label: "Antrian Pasien" },
-  { path: "/doctor/rekam-medis", label: "Rekam Medis" },
-  { path: "/doctor/pengaturan", label: "Pengaturan" },
-];
-
-// Data dummy, formatnya disamakan dengan Riwayat Medis Patient & Form SOAP
-const rekamAwal = [
-  {
-    id: "RM-0003",
-    tanggal: "2026-09-16",
-    jam: "09:15",
-    pasien: "Budi Santoso",
-    diagnosaUtama: "Gastritis",
-    soap: {
-      subjective: "Nyeri ulu hati sejak 3 hari, mual, nafsu makan menurun.",
-      objective: "TD 120/80, nadi 82x/menit, nyeri tekan epigastrium.",
-      assessment: "Gastritis akut.",
-      plan: "Terapi obat, hindari makanan pedas dan asam, kontrol bila belum membaik.",
-    },
-    resep: [
-      { nama: "Antasida Doen", jumlah: 10, aturan: "3x1 sebelum makan" },
-      { nama: "Omeprazole 20mg", jumlah: 7, aturan: "1x1 pagi hari" },
-    ],
-  },
-  {
-    id: "RM-0002",
-    tanggal: "2026-09-16",
-    jam: "08:30",
-    pasien: "Ayu Lestari",
-    diagnosaUtama: "Tension headache",
-    soap: {
-      subjective: "Pusing berkepanjangan 1 minggu, kurang tidur.",
-      objective: "TD 110/70, tidak ada defisit neurologis.",
-      assessment: "Tension headache.",
-      plan: "Analgesik, atur pola tidur, kontrol 1 minggu.",
-    },
-    resep: [{ nama: "Paracetamol 500mg", jumlah: 10, aturan: "3x1 bila nyeri" }],
-  },
-  {
-    id: "RM-0001",
-    tanggal: "2026-08-10",
-    jam: "08:00",
-    pasien: "Made Wirawan",
-    diagnosaUtama: "ISPA",
-    soap: {
-      subjective: "Batuk dan pilek 4 hari, demam ringan.",
-      objective: "Suhu 37,8 C, faring hiperemis.",
-      assessment: "Infeksi saluran pernapasan atas.",
-      plan: "Obat simptomatik, perbanyak istirahat dan minum air.",
-    },
-    resep: [
-      { nama: "Paracetamol 500mg", jumlah: 10, aturan: "3x1 bila demam" },
-      { nama: "Cetirizine 10mg", jumlah: 5, aturan: "1x1 malam hari" },
-    ],
-  },
-];
 
 const formatTanggal = (tanggal) =>
   new Date(tanggal + "T00:00:00").toLocaleDateString("id-ID", {
@@ -72,7 +13,7 @@ const formatTanggal = (tanggal) =>
   });
 
 function RekamMedis() {
-  const [rekam, setRekam] = useState(rekamAwal);
+  const [rekam, setRekam] = useState(rekamMedisDokterAwal);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterTanggal, setFilterTanggal] = useState("");
   const [modalDetail, setModalDetail] = useState(null);
@@ -132,7 +73,7 @@ function RekamMedis() {
       <Sidebar menuItems={doctorMenu} />
       <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
         <Header
-          userName="dr. Andini"
+          userName={doctorNama}
           searchValue={searchTerm}
           onSearchChange={setSearchTerm}
           searchPlaceholder="Cari nama pasien..."

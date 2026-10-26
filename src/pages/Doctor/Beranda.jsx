@@ -2,29 +2,8 @@ import { Link } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
+import { doctorMenu, doctorNama, jadwalHariIni, antreanHariIni as antrean } from "../../data/mockData";
 import "./Beranda.css";
-
-const doctorMenu = [
-  { path: "/doctor/beranda", label: "Beranda" },
-  { path: "/doctor/jadwal-praktik", label: "Jadwal Praktik" },
-  { path: "/doctor/antrian-pasien", label: "Antrian Pasien" },
-  { path: "/doctor/rekam-medis", label: "Rekam Medis" },
-  { path: "/doctor/pengaturan", label: "Pengaturan" },
-];
-
-// Data dummy, nanti diganti dari API
-const jadwalHariIni = {
-  tanggal: "Senin, 21 September 2026",
-  jamPraktik: "08:00 - 12:00",
-};
-
-const antrean = [
-  { id: 1, noAntrean: "A-01", nama: "Made Wirawan", jam: "08:00", keluhan: "Demam dan batuk", status: "Selesai" },
-  { id: 2, noAntrean: "A-02", nama: "Ayu Lestari", jam: "08:30", keluhan: "Pusing berkepanjangan", status: "Selesai" },
-  { id: 3, noAntrean: "A-03", nama: "Budi Santoso", jam: "09:15", keluhan: "Nyeri ulu hati", status: "Sedang Diperiksa" },
-  { id: 4, noAntrean: "A-04", nama: "Siti Aminah", jam: "09:30", keluhan: "Sakit kepala", status: "Menunggu" },
-  { id: 5, noAntrean: "A-05", nama: "Komang Adi", jam: "10:00", keluhan: "Kontrol tekanan darah", status: "Menunggu" },
-];
 
 const badgeVariant = {
   Menunggu: "warning",
@@ -43,9 +22,9 @@ function Beranda() {
     <div style={{ display: "flex", height: "100vh" }}>
       <Sidebar menuItems={doctorMenu} />
       <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName="dr. Andini" />
+        <Header userName={doctorNama} />
         <div className="dokter-content">
-          <h1 className="dokter-greeting">Selamat datang, dr. Andini</h1>
+          <h1 className="dokter-greeting">Selamat datang, {doctorNama}</h1>
           <p className="dokter-subgreeting">
             Ringkasan jadwal dan antrean pasien kamu hari ini.
           </p>

@@ -1,31 +1,13 @@
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
+import {
+  patientNama,
+  patientMenu,
+  tagihanTertunda,
+  riwayatPembayaranPasien as riwayatPembayaran,
+} from "../../data/mockData";
 import "./TagihanSaya.css";
-
-const patientMenu = [
-  { path: "/patient/beranda", label: "Beranda" },
-  { path: "/patient/daftar-baru", label: "Daftar Baru" },
-  { path: "/patient/riwayat-medis", label: "Riwayat Medis" },
-  { path: "/patient/tagihan", label: "Tagihan Saya" },
-  { path: "/patient/pengaturan", label: "Pengaturan" },
-];
-
-// Data dummy, nanti diganti dari API
-const tagihanTertunda = {
-  tanggal: "Rabu, 16 September 2026",
-  noAntrean: "A-03",
-  rincian: [
-    { nama: "Konsultasi dokter", harga: 150000 },
-    { nama: "Pemeriksaan laboratorium", harga: 350000 },
-    { nama: "Obat", harga: 200000 },
-  ],
-};
-
-const riwayatPembayaran = [
-  { id: 1, tanggal: "10 Agu 2026", invoice: "INV-0198", ringkasan: "Konsultasi + obat", total: 85000, status: "Lunas" },
-  { id: 2, tanggal: "02 Jul 2026", invoice: "INV-0150", ringkasan: "Konsultasi + obat", total: 0, status: "Ditanggung BPJS" },
-];
 
 const formatRupiah = (angka) => `Rp ${angka.toLocaleString("id-ID")}`;
 
@@ -38,7 +20,7 @@ function Tagihan() {
     <div style={{ display: "flex", height: "100vh" }}>
       <Sidebar menuItems={patientMenu} />
       <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName="Budi Santoso" />
+        <Header userName={patientNama} />
         <div className="tagihan-content">
           <div className="tagihan-page-head">
             <div>

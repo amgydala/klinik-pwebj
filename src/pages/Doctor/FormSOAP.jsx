@@ -1,22 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { doctorNama, pasienPeriksaList, daftarObatResep } from "../../data/mockData";
 import "./FormSOAP.css";
-
-// Data dummy, nanti diganti dari API (pasien yang sedang diperiksa)
-const pasienList = [
-  { id: 3, noAntrean: "A-03", nama: "Budi Santoso", jam: "09:15", keluhan: "Nyeri ulu hati", penjamin: "BPJS" },
-  { id: 4, noAntrean: "A-04", nama: "Siti Aminah", jam: "09:30", keluhan: "Sakit kepala", penjamin: "BPJS" },
-  { id: 5, noAntrean: "A-05", nama: "Komang Adi", jam: "10:00", keluhan: "Kontrol tekanan darah", penjamin: "Umum" },
-];
-
-const obatList = [
-  "Amoxicillin 250mg",
-  "Paracetamol 500mg",
-  "Ibuprofen 400mg",
-  "Cetirizine 10mg",
-  "Antasida Doen",
-  "Omeprazole 20mg",
-];
 
 const formKosong = {
   subjective: "",
@@ -33,13 +18,13 @@ function FormSOAP() {
   const [indeks, setIndeks] = useState(0);
   const [form, setForm] = useState(formKosong);
   const [resep, setResep] = useState([]);
-  const [obatDipilih, setObatDipilih] = useState(obatList[0]);
+  const [obatDipilih, setObatDipilih] = useState(daftarObatResep[0]);
   const [jumlah, setJumlah] = useState(1);
   const [aturan, setAturan] = useState("");
   const [pesan, setPesan] = useState("");
 
-  const pasien = pasienList[indeks];
-  const adaPasienBerikutnya = indeks < pasienList.length - 1;
+  const pasien = pasienPeriksaList[indeks];
+  const adaPasienBerikutnya = indeks < pasienPeriksaList.length - 1;
 
   const ubahField = (nama, nilai) => setForm({ ...form, [nama]: nilai });
 
@@ -100,7 +85,7 @@ function FormSOAP() {
   return (
     <div style={{ height: "100vh", overflowY: "auto" }}>
       <div className="soap-topbar">
-        <span>dr. Andini</span>
+        <span>{doctorNama}</span>
       </div>
 
       <div className="soap-content">
@@ -220,7 +205,7 @@ function FormSOAP() {
 
             <div className="soap-tambah-row">
               <select value={obatDipilih} onChange={(e) => setObatDipilih(e.target.value)}>
-                {obatList.map((o) => (
+                {daftarObatResep.map((o) => (
                   <option key={o} value={o}>{o}</option>
                 ))}
               </select>
