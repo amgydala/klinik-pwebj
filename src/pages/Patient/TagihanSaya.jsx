@@ -7,20 +7,23 @@ import {
   tagihanTertunda,
   riwayatPembayaranPasien as riwayatPembayaran,
 } from "../../data/mockData";
+import { getCurrentUser } from "../../data/authService";
 import "./TagihanSaya.css";
 
 const formatRupiah = (angka) => `Rp ${angka.toLocaleString("id-ID")}`;
 
 function Tagihan() {
+  const currentUser = getCurrentUser();
+  const displayName = currentUser?.name || patientNama;
   const totalTertunda = tagihanTertunda
     ? tagihanTertunda.rincian.reduce((sum, item) => sum + item.harga, 0)
     : 0;
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div className="patient-layout">
       <Sidebar menuItems={patientMenu} />
-      <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName={patientNama} />
+      <div className="patient-main-content">
+        <Header userName={displayName} />
         <div className="tagihan-content">
           <div className="tagihan-page-head">
             <div>

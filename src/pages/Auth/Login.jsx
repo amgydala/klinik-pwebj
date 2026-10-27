@@ -8,7 +8,7 @@ import {
   STAFF_ACCOUNTS,
 } from "../../data/authService";
 import { MailIcon, KeyIcon, EyeIcon, EyeOffIcon } from "./AuthIcons";
-import hospitalBg from "../../assets/hospital-bg-cropped.jpeg";
+import hospitalHero from "../../assets/hospital-hero.jpg";
 import "./Auth.css";
 
 function Login() {
@@ -73,10 +73,19 @@ function Login() {
 
   return (
     <div className="auth-wrapper">
-      {/* Sisi Kiri: Hero Hospital Architecture & Branding (sesuai public/loginpage.jpeg) */}
-      <div className="auth-hero" style={{ backgroundImage: `url(${hospitalBg})` }}>
-        <div className="auth-hero-header">
-          {/* Latar belakang sudah mencakup logo dan teks SIMRS */}
+      {/* Sisi Kiri: Hero dengan gambar hasil generate & branding SIMRS */}
+      <div className="auth-hero" style={{ backgroundImage: `url(${hospitalHero})` }}>
+        <div className="auth-hero-overlay"></div>
+        <div className="auth-hero-branding">
+          <div className="auth-hero-logo-box">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="5" fill="#e0f2fe" stroke="#0284c7" strokeWidth="2" />
+              <path d="M12 7v10m-5-5h10" />
+            </svg>
+            <span className="auth-hero-brand-name">SIMRS</span>
+          </div>
+          <h2 className="auth-hero-heading">Akses Layanan SIMRS</h2>
+          <p className="auth-hero-subheading">Solusi Terintegrasi untuk Kesehatan Unggul.</p>
         </div>
 
         <div className="auth-hero-footer">

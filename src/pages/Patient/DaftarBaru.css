@@ -144,3 +144,23 @@
   cursor: pointer;
   font-weight: 500;
 }
+
+@media (max-width: 640px) {
+  .pasien-form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .pasien-card {
+    padding: 16px;
+  }
+
+  .pasien-action-row {
+    flex-direction: column;
+  }
+
+  .pasien-btn-batal, .pasien-btn-submit {
+    width: 100%;
+    text-align: center;
+  }
+}

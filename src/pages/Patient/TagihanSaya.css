@@ -145,3 +145,27 @@
   color: #94a3b8;
   font-size: 14px;
 }
+
+@media (max-width: 640px) {
+  .tagihan-page-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .tagihan-btn-cetak {
+    width: 100%;
+    text-align: center;
+  }
+
+  .tagihan-pending-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .tagihan-banner {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

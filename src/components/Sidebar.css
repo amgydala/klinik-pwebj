@@ -1,46 +1,188 @@
+/* =====================================================
+   SIDEBAR STYLES (Light Clinic Palette & Responsive)
+   Berdasarkan referensi public/contohwireframe1.png
+   ===================================================== */
+
 .sidebar {
-  width: 220px;
+  width: 250px;
+  min-width: 250px;
   height: 100vh;
   height: 100dvh;
-  background-color: #1e293b;
+  background-color: #f8fafc;
+  border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   padding: 20px 0;
+  box-sizing: border-box;
+  z-index: 50;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Logo Area */
 .sidebar-logo {
-  padding: 0 20px 20px 20px;
+  padding: 0 16px 20px 16px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.logo-placeholder {
-  width: 40px;
-  height: 40px;
-  background-color: #64748b;
-  border-radius: 8px;
+.sidebar-logo-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
 }
 
-.sidebar-menu {
+.sidebar-logo-emblem {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-logo-text {
   display: flex;
   flex-direction: column;
 }
 
+.sidebar-logo-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #1e293b;
+  letter-spacing: -0.4px;
+  line-height: 1.1;
+}
+
+.sidebar-logo-subtitle {
+  font-size: 10.5px;
+  color: #64748b;
+  line-height: 1.25;
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+/* Menu Navigasi */
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
 .sidebar-item {
-  padding: 12px 20px;
-  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  color: #475569;
   text-decoration: none;
-  font-size: 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+  border-radius: 9px;
+  transition: all 0.15s ease;
 }
 
 .sidebar-item:hover {
-  background-color: #334155;
+  background-color: #f1f5f9;
+  color: #0f172a;
 }
 
 .sidebar-item.active {
-  background-color: #475569;
-  color: white;
+  background-color: #e2e8f0;
+  color: #0f172a;
+  font-weight: 700;
 }
 
+.sidebar-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.sidebar-item-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Footer & Motto */
 .sidebar-footer {
-  padding: 0 20px;
-  margin-top: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.sidebar-item-logout {
+  color: #dc2626;
+}
+
+.sidebar-item-logout:hover {
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+/* Kartu Motto: Melayani dengan Hati */
+.sidebar-quote-card {
+  margin-top: 10px;
+  background-color: #f1f5f9;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.sidebar-quote-icon {
+  color: #475569;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-quote-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+  line-height: 1.35;
+}
+
+/* ---------------------------------------------------
+   RESPONSIVE DRAWER UNTUK MOBILE & TABLET
+   --------------------------------------------------- */
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+    background-color: #ffffff;
+    z-index: 100;
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(3px);
+    z-index: 90;
+  }
 }

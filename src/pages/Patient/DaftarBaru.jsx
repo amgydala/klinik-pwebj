@@ -10,6 +10,7 @@ import {
   slotList,
   kataKunciPoli,
 } from "../../data/mockData";
+import { getCurrentUser } from "../../data/authService";
 import "./DaftarBaru.css";
 
 const cariRekomendasi = (keluhan) => {
@@ -30,6 +31,8 @@ const formatTanggal = (tanggal) =>
 
 function DaftarBaru() {
   const navigate = useNavigate();
+  const currentUser = getCurrentUser();
+  const displayName = currentUser?.name || patientNama;
   const hariIni = new Date().toISOString().split("T")[0];
 
   const [keluhanUtama, setKeluhanUtama] = useState("");
@@ -60,10 +63,10 @@ function DaftarBaru() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div className="patient-layout">
       <Sidebar menuItems={patientMenu} />
-      <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName={patientNama} />
+      <div className="patient-main-content">
+        <Header userName={displayName} />
         <div className="pasien-content">
           <h1 className="pasien-greeting">Daftar Kunjungan Baru</h1>
           <p className="pasien-subgreeting">

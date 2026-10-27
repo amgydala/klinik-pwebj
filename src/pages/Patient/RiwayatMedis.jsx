@@ -5,14 +5,18 @@ import {
   patientMenu,
   riwayatMedisPasien as riwayatMedis,
 } from "../../data/mockData";
+import { getCurrentUser } from "../../data/authService";
 import "./RiwayatMedis.css";
 
 function RiwayatMedis() {
+  const currentUser = getCurrentUser();
+  const displayName = currentUser?.name || patientNama;
+
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div className="patient-layout">
       <Sidebar menuItems={patientMenu} />
-      <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName={patientNama} />
+      <div className="patient-main-content">
+        <Header userName={displayName} />
         <div className="pasien-content">
           <div className="pasien-page-head">
             <div>

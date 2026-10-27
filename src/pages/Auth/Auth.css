@@ -22,7 +22,7 @@
   position: relative;
   background-color: #0f172a;
   background-repeat: no-repeat;
-  background-position: left center;
+  background-position: center center;
   background-size: cover;
   display: flex;
   flex-direction: column;
@@ -32,26 +32,55 @@
   color: #0f172a;
 }
 
-/* Fallback jika cropped image belum termuat */
-.auth-hero::before {
-  content: '';
+/* Semi-transparent soft overlay to ensure crisp typography */
+.auth-hero-overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(
-    135deg,
-    rgba(215, 243, 238, 0.2) 0%,
-    rgba(255, 255, 255, 0) 50%,
-    rgba(15, 23, 42, 0.25) 100%
+    140deg,
+    rgba(240, 249, 255, 0.88) 0%,
+    rgba(224, 242, 254, 0.72) 40%,
+    rgba(15, 23, 42, 0.4) 100%
   );
   pointer-events: none;
+  z-index: 1;
 }
 
-/* Top bar informasi demo pada hero */
-.auth-hero-header {
+/* Brand header */
+.auth-hero-branding {
   position: relative;
   z-index: 2;
-  opacity: 0; /* Gambar latar sudah memiliki logo & tulisan "Akses Layanan SIMRS" */
-  pointer-events: none;
+}
+
+.auth-hero-logo-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.auth-hero-brand-name {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0369a1;
+  letter-spacing: -0.5px;
+}
+
+.auth-hero-heading {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px;
+  line-height: 1.25;
+  letter-spacing: -0.5px;
+}
+
+.auth-hero-subheading {
+  font-size: 15px;
+  color: #334155;
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
 /* Hero footer info demo */
