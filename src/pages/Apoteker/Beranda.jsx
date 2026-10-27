@@ -7,7 +7,6 @@ import {
   apotekerNama,
   berandaStats,
   dataResepAwal,
-  dataObatAwal,
 } from "../../data/mockData";
 import "./Beranda.css";
 
