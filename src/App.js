@@ -30,6 +30,9 @@ import DoctorJadwalPraktik from "./pages/Doctor/JadwalPraktik";
 import DoctorFormSOAP from "./pages/Doctor/FormSOAP";
 import DoctorRekamMedis from "./pages/Doctor/RekamMedis";
 
+// Admin
+import AdminBeranda from "./pages/Admin/Beranda";
+
 const pageDirectory = [
   {
     role: "Autentikasi (SIMRS)",
@@ -73,6 +76,12 @@ const pageDirectory = [
       { path: "/doctor/jadwal-praktik", label: "Jadwal Praktik" },
       { path: "/doctor/form-soap", label: "Form SOAP" },
       { path: "/doctor/rekam-medis", label: "Rekam Medis" },
+    ],
+  },
+  {
+    role: "Admin",
+    pages: [
+      { path: "/admin/beranda", label: "Dashboard Admin" },
     ],
   },
 ];
@@ -171,6 +180,9 @@ function App() {
         <Route path="/doctor/jadwal-praktik" element={<DoctorJadwalPraktik />} />
         <Route path="/doctor/form-soap" element={<DoctorFormSOAP />} />
         <Route path="/doctor/rekam-medis" element={<DoctorRekamMedis />} />
+
+        {/* Admin */}
+        <Route path="/admin/beranda" element={<AdminBeranda />} />
       </Routes>
     </BrowserRouter>
   );

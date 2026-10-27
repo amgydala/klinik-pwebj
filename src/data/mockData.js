@@ -5,6 +5,37 @@
 // =====================================================
 
 // ---------------------------------------------------
+// ADMIN
+// ---------------------------------------------------
+
+export const adminNama = "Administrator Klinik";
+
+export const adminMenu = [
+  { path: "/admin/beranda", label: "Beranda" },
+];
+
+export const adminDashboardData = {
+  auditLog: [
+    {
+      id: "audit-001",
+      tanggal: "2026-09-16",
+      waktu: "09:20",
+      pengguna: "dr. Andini",
+      aktivitas: "Menyimpan rekam medis RM-0003",
+      pasien: "Budi Santoso",
+    },
+    {
+      id: "audit-002",
+      tanggal: "2026-09-16",
+      waktu: "08:42",
+      pengguna: "dr. Andini",
+      aktivitas: "Membuka rekam medis RM-0002",
+      pasien: "Ayu Lestari",
+    },
+  ],
+};
+
+// ---------------------------------------------------
 // APOTEKER
 // ---------------------------------------------------
 
