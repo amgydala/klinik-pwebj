@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { logoutUser } from "../data/authService";
 import "./Sidebar.css";
 
 function Sidebar({ menuItems }) {
@@ -25,7 +26,7 @@ function Sidebar({ menuItems }) {
       </div>
 
       <div className="sidebar-footer">
-        <Link to="/login" className="sidebar-item">
+        <Link to="/login" onClick={logoutUser} className="sidebar-item">
           Keluar
         </Link>
       </div>
