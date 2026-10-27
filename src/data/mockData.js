@@ -197,15 +197,7 @@ export const riwayatMedisPasien = [
 ];
 
 // ----- Tagihan Saya -----
-export const tagihanTertunda = {
-  tanggal: "Rabu, 16 September 2026",
-  noAntrean: "A-03",
-  rincian: [
-    { nama: "Konsultasi dokter", harga: 150000 },
-    { nama: "Pemeriksaan laboratorium", harga: 350000 },
-    { nama: "Obat", harga: 200000 },
-  ],
-};
+export const tagihanTertunda = null;
 
 export const riwayatPembayaranPasien = [
   { id: 1, tanggal: "10 Agu 2026", invoice: "INV-0198", ringkasan: "Konsultasi + obat", total: 85000, status: "Lunas" },
