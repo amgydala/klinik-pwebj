@@ -82,7 +82,18 @@ function Tagihan() {
           )}
 
           {totalTertunda === 0 && (
-            <div className="tagihan-lunas">Tidak ada tagihan yang tertunda.</div>
+            <div className="tagihan-lunas-state">
+              <div className="tagihan-lunas-icon">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+              </div>
+              <div className="tagihan-lunas-title">Semua Tagihan Lunas!</div>
+              <div className="tagihan-lunas-desc">
+                Tidak ada tagihan yang perlu dibayar saat ini. Terus jaga kesehatan kamu ya! 💪
+              </div>
+            </div>
           )}
 
           <div className="tagihan-card">
