@@ -1,6 +1,6 @@
 /* =====================================================
-   SIDEBAR STYLES (Light Clinic Palette & Responsive)
-   Berdasarkan referensi public/contohwireframe1.png
+   SIDEBAR STYLES (Original Dark Navy Theme #1e293b)
+   Tata letak mengikuti wireframe, warna konsisten dengan desain sebelumnya
    ===================================================== */
 
 .sidebar {
@@ -8,20 +8,20 @@
   min-width: 250px;
   height: 100vh;
   height: 100dvh;
-  background-color: #f8fafc;
-  border-right: 1px solid #e2e8f0;
+  background-color: #1e293b;
   display: flex;
   flex-direction: column;
   padding: 20px 0;
   box-sizing: border-box;
   z-index: 50;
   transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  color: #ffffff;
 }
 
 /* Logo Area */
 .sidebar-logo {
-  padding: 0 16px 20px 16px;
-  border-bottom: 1px solid #f1f5f9;
+  padding: 0 18px 20px 18px;
+  border-bottom: 1px solid #334155;
 }
 
 .sidebar-logo-link {
@@ -46,14 +46,14 @@
 .sidebar-logo-title {
   font-size: 19px;
   font-weight: 800;
-  color: #1e293b;
+  color: #ffffff;
   letter-spacing: -0.4px;
   line-height: 1.1;
 }
 
 .sidebar-logo-subtitle {
   font-size: 10.5px;
-  color: #64748b;
+  color: #94a3b8;
   line-height: 1.25;
   margin-top: 3px;
   font-weight: 500;
@@ -73,8 +73,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 14px;
-  color: #475569;
+  padding: 11px 16px;
+  color: #cbd5e1;
   text-decoration: none;
   font-size: 13.5px;
   font-weight: 500;
@@ -83,13 +83,13 @@
 }
 
 .sidebar-item:hover {
-  background-color: #f1f5f9;
-  color: #0f172a;
+  background-color: #334155;
+  color: #ffffff;
 }
 
 .sidebar-item.active {
-  background-color: #e2e8f0;
-  color: #0f172a;
+  background-color: #475569;
+  color: #ffffff;
   font-weight: 700;
 }
 
@@ -109,38 +109,38 @@
   text-overflow: ellipsis;
 }
 
-/* Footer & Motto */
+/* Footer Area */
 .sidebar-footer {
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid #334155;
 }
 
 .sidebar-item-logout {
-  color: #dc2626;
+  color: #f87171;
 }
 
 .sidebar-item-logout:hover {
-  background-color: #fef2f2;
-  color: #b91c1c;
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
 }
 
 /* Kartu Motto: Melayani dengan Hati */
 .sidebar-quote-card {
   margin-top: 10px;
-  background-color: #f1f5f9;
+  background-color: #0f172a;
   border-radius: 12px;
   padding: 12px 14px;
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #334155;
 }
 
 .sidebar-quote-icon {
-  color: #475569;
+  color: #38bdf8;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -150,7 +150,7 @@
 .sidebar-quote-text {
   font-size: 11px;
   font-weight: 600;
-  color: #475569;
+  color: #cbd5e1;
   line-height: 1.35;
 }
 
@@ -168,8 +168,8 @@
     left: 0;
     bottom: 0;
     transform: translateX(-100%);
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
-    background-color: #ffffff;
+    box-shadow: 6px 0 24px rgba(0, 0, 0, 0.35);
+    background-color: #1e293b;
     z-index: 100;
   }
 
@@ -181,7 +181,7 @@
     display: block;
     position: fixed;
     inset: 0;
-    background-color: rgba(15, 23, 42, 0.45);
+    background-color: rgba(15, 23, 42, 0.65);
     backdrop-filter: blur(3px);
     z-index: 90;
   }
