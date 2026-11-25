@@ -34,6 +34,9 @@ import DoctorRekamMedis from "./pages/Doctor/RekamMedis";
 // Admin
 import AdminBeranda from "./pages/Admin/Beranda";
 import AdminRegistrasiStaf from "./pages/Admin/RegistrasiStaf";
+import AdminTagihan from "./pages/Admin/TagihanAdmin";
+import AdminInventarisObat from "./pages/Admin/InventarisObatAdmin";
+import AdminAuditLog from "./pages/Admin/AuditLogAdmin";
 
 const pageDirectory = [
   {
@@ -84,6 +87,9 @@ const pageDirectory = [
     role: "Admin",
     pages: [
       { path: "/admin/beranda", label: "Dashboard Admin" },
+      { path: "/admin/tagihan", label: "Rekapitulasi & Tagihan" },
+      { path: "/admin/inventaris-obat", label: "Inventaris & Obat" },
+      { path: "/admin/audit-log", label: "Audit Trail Rekam Medis" },
       { path: "/admin/registrasi-staf", label: "Registrasi Dokter / Apoteker" },
     ],
   },
@@ -194,6 +200,9 @@ function App() {
 
         {/* Admin */}
         <Route path="/admin/beranda" element={<RequireRole role="admin"><AdminBeranda /></RequireRole>} />
+        <Route path="/admin/tagihan" element={<RequireRole role="admin"><AdminTagihan /></RequireRole>} />
+        <Route path="/admin/inventaris-obat" element={<RequireRole role="admin"><AdminInventarisObat /></RequireRole>} />
+        <Route path="/admin/audit-log" element={<RequireRole role="admin"><AdminAuditLog /></RequireRole>} />
         <Route path="/admin/registrasi-staf" element={<RequireRole role="admin"><AdminRegistrasiStaf /></RequireRole>} />
       </Routes>
     </BrowserRouter>

@@ -75,9 +75,9 @@ function HeartHandIcon() {
 const getMenuIcon = (label) => {
   const text = (label || "").toLowerCase();
   if (text.includes("beranda")) return <HomeIcon />;
-  if (text.includes("daftar") || text.includes("baru") || text.includes("antrian")) return <UserPlusIcon />;
-  if (text.includes("riwayat") || text.includes("rekam") || text.includes("soap") || text.includes("jadwal")) return <DocumentMedicalIcon />;
-  if (text.includes("tagihan") || text.includes("billing") || text.includes("transaksi") || text.includes("obat")) return <CreditCardIcon />;
+  if (text.includes("daftar") || text.includes("registrasi") || text.includes("baru") || text.includes("antrian")) return <UserPlusIcon />;
+  if (text.includes("audit") || text.includes("riwayat") || text.includes("rekam") || text.includes("soap") || text.includes("jadwal")) return <DocumentMedicalIcon />;
+  if (text.includes("tagihan") || text.includes("billing") || text.includes("transaksi") || text.includes("obat") || text.includes("inventaris")) return <CreditCardIcon />;
   if (text.includes("pengaturan")) return <SettingsIcon />;
   return <DocumentMedicalIcon />;
 };

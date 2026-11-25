@@ -125,6 +125,7 @@ function DaftarBaru() {
   const [loadingOptions, setLoadingOptions] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLocked, setIsLocked] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -196,6 +197,9 @@ function DaftarBaru() {
       setDoctorOptions(options);
       const suggestedOption = options.find((option) => option.isRecommended);
       if (suggestedOption) setSelectedOption(suggestedOption.scheduleId);
+      if (options.length > 0 || recommendationResponse?.recommendation) {
+        setIsLocked(true);
+      }
       if (!options.length) {
         setErrorMessage(
           "Belum ada dokter atau jadwal yang dapat dipilih untuk tanggal ini. Silakan pilih tanggal lain."
@@ -206,6 +210,17 @@ function DaftarBaru() {
     } finally {
       setLoadingOptions(false);
     }
+  };
+
+  const handleCancel = () => {
+    navigate(-1);
+  };
+
+  const handleEdit = () => {
+    setIsLocked(false);
+    setDoctorOptions([]);
+    setSelectedOption("");
+    setRecommendation(null);
   };
 
   const handleConfirm = async () => {
@@ -267,6 +282,7 @@ function DaftarBaru() {
                     min={localDate()}
                     value={date}
                     onChange={(event) => setDate(event.target.value)}
+                    disabled={isLocked}
                     required
                   />
                 </div>
@@ -276,6 +292,7 @@ function DaftarBaru() {
                     id="appointment-guarantor"
                     value={guarantor}
                     onChange={(event) => setGuarantor(event.target.value)}
+                    disabled={isLocked}
                     required
                   >
                     <option value="Umum">Umum</option>
@@ -292,14 +309,26 @@ function DaftarBaru() {
                   placeholder="Jelaskan keluhan yang dirasakan"
                   value={complaint}
                   onChange={(event) => setComplaint(event.target.value)}
+                  disabled={isLocked}
                   required
                 />
               </div>
 
               {recommendation && (
                 <div className="pasien-rekomendasi" role="status">
-                  Rekomendasi poliklinik:{" "}
-                  <strong>{recommendation.specialization}</strong>
+                  <span>
+                    Rekomendasi poliklinik:{" "}
+                    <strong>{recommendation.specialization}</strong>
+                  </span>
+                  {isLocked && (
+                    <button
+                      type="button"
+                      className="pasien-btn-edit-inline"
+                      onClick={handleEdit}
+                    >
+                      Ubah Data
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -337,10 +366,20 @@ function DaftarBaru() {
                 <button
                   type="button"
                   className="pasien-btn-batal"
-                  onClick={() => navigate("/patient/beranda")}
+                  onClick={handleCancel}
                 >
                   Batal
                 </button>
+                {isLocked && (
+                  <button
+                    type="button"
+                    className="pasien-btn-edit"
+                    onClick={handleEdit}
+                    disabled={confirming}
+                  >
+                    Edit Data
+                  </button>
+                )}
                 {doctorOptions.length === 0 ? (
                   <button
                     type="submit"

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
@@ -6,17 +7,13 @@ import { adminMenu } from "../../data/mockData";
 import {
   createDoctorSchedule,
   deactivateDoctorSchedule,
-  deleteMedicine,
   getAdminBillings,
-  getBillingDetails,
   getCurrentUser,
   getDoctorAppointments,
   getDoctorSchedules,
   getMedicalRecordAuditLogs,
   getMedicines,
-  getMedicineDetails,
   getPatientMedicalRecords,
-  updateBillingPayment,
   updateDoctorSchedule,
 } from "../../data/authService";
 import "./Beranda.css";
@@ -28,11 +25,23 @@ const today = () => {
 const getId = (row) => row?.id || row?._id || row || "";
 const money = (value) => `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
 
-function Panel({ title, description, children }) {
+function Panel({ title, description, children, actionLink, actionLabel }) {
   return (
     <section className="admin-panel">
-      <div className="admin-panel-heading">
-        <div><h2>{title}</h2><p>{description}</p></div>
+      <div className="admin-panel-heading" style={{ flexWrap: "wrap", gap: 8 }}>
+        <div>
+          <h2>{title}</h2>
+          <p>{description}</p>
+        </div>
+        {actionLink && (
+          <Link
+            to={actionLink}
+            className="admin-btn admin-btn-primary"
+            style={{ textDecoration: "none", fontSize: 13, padding: "6px 12px", alignSelf: "center" }}
+          >
+            {actionLabel || "Lihat Selengkapnya →"}
+          </Link>
+        )}
       </div>
       {children}
     </section>
@@ -42,16 +51,18 @@ function Panel({ title, description, children }) {
 function Beranda() {
   const user = getCurrentUser();
   const [appointments, setAppointments] = useState([]);
-  const [patientId, setPatientId] = useState("");
-  const [patientRecords, setPatientRecords] = useState([]);
   const [billings, setBillings] = useState([]);
   const [medicines, setMedicines] = useState([]);
   const [auditPage, setAuditPage] = useState(null);
-  const [auditPageNumber, setAuditPageNumber] = useState(1);
   const [errors, setErrors] = useState([]);
   const [message, setMessage] = useState("");
-  const [selectedMedicine, setSelectedMedicine] = useState(null);
-  const [selectedBilling, setSelectedBilling] = useState(null);
+
+  // Modul Pencarian Riwayat Medis Pasien
+  const [patientId, setPatientId] = useState("");
+  const [patientRecords, setPatientRecords] = useState([]);
+  const [searchingRecords, setSearchingRecords] = useState(false);
+
+  // Modul Manajemen Jadwal Praktik Dokter
   const [doctorId, setDoctorId] = useState("");
   const [schedules, setSchedules] = useState([]);
   const [schedule, setSchedule] = useState({
@@ -62,28 +73,28 @@ function Beranda() {
   });
   const [editingScheduleId, setEditingScheduleId] = useState("");
 
-  const loadAudit = useCallback(async () => {
-    try {
-      setAuditPage(await getMedicalRecordAuditLogs(auditPageNumber));
-    } catch (error) {
-      setErrors((current) => [...current, `Audit log: ${error.message}`]);
-    }
-  }, [auditPageNumber]);
-
   const loadResources = useCallback(async () => {
     setErrors([]);
     const results = await Promise.allSettled([
       getDoctorAppointments({ date: today() }),
       getAdminBillings(),
       getMedicines(),
+      getMedicalRecordAuditLogs(1, 5),
     ]);
+
     const messages = [];
     if (results[0].status === "fulfilled") setAppointments(results[0].value);
     else messages.push(`Antrean: ${results[0].reason.message}`);
+
     if (results[1].status === "fulfilled") setBillings(results[1].value);
     else messages.push(`Tagihan: ${results[1].reason.message}`);
+
     if (results[2].status === "fulfilled") setMedicines(results[2].value);
     else messages.push(`Inventaris obat: ${results[2].reason.message}`);
+
+    if (results[3].status === "fulfilled") setAuditPage(results[3].value);
+    else messages.push(`Audit log: ${results[3].reason.message}`);
+
     setErrors(messages);
   }, []);
 
@@ -91,10 +102,46 @@ function Beranda() {
     loadResources();
   }, [loadResources]);
 
-  useEffect(() => {
-    loadAudit();
-  }, [loadAudit]);
+  // Ringkasan Tagihan
+  const billingSummary = useMemo(() => {
+    let totalRevenue = 0;
+    let unpaidCount = 0;
+    billings.forEach((b) => {
+      if (b.payment_status === "paid") {
+        totalRevenue += Number(b.total_amount || 0);
+      } else {
+        unpaidCount += 1;
+      }
+    });
+    return {
+      totalRevenue,
+      unpaidCount,
+      totalCount: billings.length,
+      recent: billings.slice(0, 5),
+    };
+  }, [billings]);
 
+  // Ringkasan Obat
+  const medicineSummary = useMemo(() => {
+    let totalStock = 0;
+    medicines.forEach((m) => {
+      totalStock += (m.batches || []).reduce((acc, b) => acc + Number(b.stock || 0), 0);
+    });
+    return {
+      totalStock,
+      totalMedicines: medicines.length,
+      recent: medicines.slice(0, 5),
+    };
+  }, [medicines]);
+
+  // Log Audit Terbaru
+  const recentAuditLogs = useMemo(() => {
+    if (Array.isArray(auditPage?.data)) return auditPage.data.slice(0, 5);
+    if (Array.isArray(auditPage?.data?.data)) return auditPage.data.data.slice(0, 5);
+    return [];
+  }, [auditPage]);
+
+  // Operasi Jadwal Dokter
   const loadSchedules = async (id = doctorId) => {
     if (!id.trim()) {
       setErrors((current) => [...current, "Masukkan ID profil dokter untuk mencari jadwal."]);
@@ -148,61 +195,17 @@ function Beranda() {
     }
   };
 
-  const removeMedicine = async (medicine) => {
-    if (!window.confirm(`Hapus ${medicine.name} dari inventaris?`)) return;
-    try {
-      await deleteMedicine(getId(medicine));
-      setMedicines((current) => current.filter((item) => getId(item) !== getId(medicine)));
-      setMessage("Obat berhasil dihapus.");
-    } catch (error) {
-      setErrors([`Hapus obat: ${error.message}`]);
-    }
-  };
-
-  const showMedicine = async (medicine) => {
-    try {
-      const details = await getMedicineDetails(getId(medicine));
-      setSelectedMedicine(details.medicine || details);
-    } catch (error) {
-      setErrors([`Detail obat: ${error.message}`]);
-    }
-  };
-
-  const showBilling = async (billing) => {
-    try {
-      const details = await getBillingDetails(getId(billing));
-      setSelectedBilling(details.billing || details);
-    } catch (error) {
-      setErrors([`Detail tagihan: ${error.message}`]);
-    }
-  };
-
   const searchPatientRecords = async (event) => {
     event.preventDefault();
+    setSearchingRecords(true);
     try {
       setPatientRecords(await getPatientMedicalRecords(patientId.trim()));
     } catch (error) {
       setErrors([`Riwayat medis: ${error.message}`]);
+    } finally {
+      setSearchingRecords(false);
     }
   };
-
-  const markPaid = async () => {
-    if (!selectedBilling || selectedBilling.payment_status !== "unpaid") return;
-    if (!window.confirm("Catat pembayaran tunai dan jalankan pemotongan FEFO?")) return;
-    try {
-      await updateBillingPayment(getId(selectedBilling), "cash");
-      setSelectedBilling(null);
-      setMessage("Pembayaran berhasil dicatat.");
-      await loadResources();
-    } catch (error) {
-      setErrors([`Pembayaran: ${error.message}`]);
-    }
-  };
-
-  const auditLogs = Array.isArray(auditPage?.data) ? auditPage.data : [];
-  const auditPagination = auditPage?.data && !Array.isArray(auditPage.data)
-    ? auditPage.data
-    : auditPage;
 
   return (
     <div className="admin-layout">
@@ -212,206 +215,381 @@ function Beranda() {
         <main className="admin-content">
           <div className="admin-welcome">
             <div>
-              <span className="admin-eyebrow">Administrasi SIMRS</span>
-              <h1>Audit & Pemeliharaan</h1>
-              <p>Data langsung dari API; operasi yang mengubah data meminta konfirmasi.</p>
+              <span className="admin-eyebrow">Dashboard Eksekutif SIMRS</span>
+              <h1>Ringkasan Operasional Klinik</h1>
+              <p>Ikhtisar performa harian, pendapatan billing, inventaris farmasi, dan kepatuhan audit.</p>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignSelf: "center" }}>
+              <Link to="/admin/tagihan" className="admin-btn">
+                Kelola Tagihan
+              </Link>
+              <Link to="/admin/inventaris-obat" className="admin-btn">
+                Kelola Obat
+              </Link>
+              <Link to="/admin/audit-log" className="admin-btn">
+                Audit Trail
+              </Link>
             </div>
           </div>
+
           {errors.map((error, index) => (
             <div key={`${index}-${error}`} role="alert" className="admin-panel" style={{ color: "#b42318", marginBottom: 10 }}>
               {error}
             </div>
           ))}
-          {message && <div role="status" className="admin-panel" style={{ marginBottom: 10 }}>{message}</div>}
+          {message && <div role="status" className="admin-panel" style={{ marginBottom: 10, color: "#166534", backgroundColor: "#f0fdf4" }}>{message}</div>}
 
+          {/* Kartu Ringkasan Statistik Utama */}
           <div className="admin-stats">
-            <div className="admin-stat-card"><div className="admin-stat-copy"><span>Antrean hari ini</span><strong>{appointments.length}</strong></div></div>
-            <div className="admin-stat-card"><div className="admin-stat-copy"><span>Total tagihan</span><strong>{billings.length}</strong></div></div>
-            <div className="admin-stat-card"><div className="admin-stat-copy"><span>Jenis obat</span><strong>{medicines.length}</strong></div></div>
-            <div className="admin-stat-card"><div className="admin-stat-copy"><span>Audit log pada halaman</span><strong>{auditLogs.length}</strong></div></div>
-          </div>
-
-          <Panel title="Audit rekam medis" description="Log akses dan pembuatan rekam medis dari endpoint admin.">
-            <div className="admin-audit-table-wrap">
-              <table className="admin-audit-table">
-                <thead><tr><th>Waktu</th><th>Pengguna</th><th>Role</th><th>Aksi</th><th>IP</th></tr></thead>
-                <tbody>
-                  {auditLogs.map((log) => (
-                    <tr key={getId(log)}>
-                      <td>{log.accessed_at ? new Date(log.accessed_at).toLocaleString("id-ID") : "-"}</td>
-                      <td>{log.user_name || log.user_id || "-"}</td>
-                      <td>{log.user_role || "-"}</td>
-                      <td>{log.action || "-"}</td>
-                      <td>{log.ip_address || "-"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="admin-panel-heading" style={{ marginTop: 12 }}>
-              <span>Halaman {auditPagination?.current_page || auditPageNumber} dari {auditPagination?.last_page || 1}</span>
-              <div>
-                <button disabled={auditPageNumber <= 1} onClick={() => setAuditPageNumber((page) => page - 1)}>Sebelumnya</button>{" "}
-                <button disabled={auditPageNumber >= (auditPagination?.last_page || 1)} onClick={() => setAuditPageNumber((page) => page + 1)}>Berikutnya</button>
+            <div className="admin-stat-card">
+              <div className="admin-stat-copy">
+                <span>Antrean Hari Ini</span>
+                <strong>{appointments.length} pasien</strong>
+                <small style={{ color: "#64748b", marginTop: 4 }}>per tanggal {today()}</small>
               </div>
             </div>
-          </Panel>
+            <div className="admin-stat-card">
+              <div className="admin-stat-copy">
+                <span>Total Pendapatan Billing</span>
+                <strong style={{ color: "#0f766e" }}>{money(billingSummary.totalRevenue)}</strong>
+                <small style={{ color: "#64748b", marginTop: 4 }}>{billingSummary.unpaidCount} tagihan belum lunas</small>
+              </div>
+            </div>
+            <div className="admin-stat-card">
+              <div className="admin-stat-copy">
+                <span>Inventaris Farmasi</span>
+                <strong>{medicineSummary.totalMedicines} jenis obat</strong>
+                <small style={{ color: "#64748b", marginTop: 4 }}>{medicineSummary.totalStock.toLocaleString("id-ID")} unit fisik tersedia</small>
+              </div>
+            </div>
+            <div className="admin-stat-card">
+              <div className="admin-stat-copy">
+                <span>Kepatuhan Audit Log</span>
+                <strong style={{ color: "#2563eb" }}>Aktif (UU PDP)</strong>
+                <small style={{ color: "#64748b", marginTop: 4 }}>perekaman otomatis akses rekam medis</small>
+              </div>
+            </div>
+          </div>
 
-          <Panel title="Antrean hari ini" description="Data appointment yang tersedia untuk administrator.">
+          {/* Grid Ringkasan Tagihan & Obat */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: 16, marginBottom: 16 }}>
+            {/* Ringkasan Tagihan */}
+            <Panel
+              title="Ringkasan Tagihan Terbaru"
+              description="5 transaksi tagihan terbaru. Buka halaman detail untuk rekap per bulan/tahun."
+              actionLink="/admin/tagihan"
+              actionLabel="Rekap & Detail Tagihan →"
+            >
+              <div className="admin-audit-table-wrap">
+                <table className="admin-audit-table">
+                  <thead>
+                    <tr>
+                      <th>ID Tagihan</th>
+                      <th>Total</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {billingSummary.recent.length === 0 ? (
+                      <tr><td colSpan="3" style={{ textAlign: "center", padding: 14 }}>Belum ada data tagihan.</td></tr>
+                    ) : (
+                      billingSummary.recent.map((billing) => (
+                        <tr key={getId(billing)}>
+                          <td><code>{getId(billing).substring(0, 8)}...</code></td>
+                          <td><strong>{money(billing.total_amount)}</strong></td>
+                          <td>
+                            <Badge
+                              text={billing.payment_status === "paid" ? "Lunas" : "Belum Lunas"}
+                              variant={billing.payment_status === "paid" ? "success" : "warning"}
+                            />
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Panel>
+
+            {/* Ringkasan Inventaris Obat */}
+            <Panel
+              title="Ringkasan Inventaris Obat"
+              description="Daftar sampel obat klinik. Lihat rekap per kategori dan monitoring FEFO di halaman obat."
+              actionLink="/admin/inventaris-obat"
+              actionLabel="Rekap & Detail Obat →"
+            >
+              <div className="admin-audit-table-wrap">
+                <table className="admin-audit-table">
+                  <thead>
+                    <tr>
+                      <th>Nama Obat</th>
+                      <th>Kategori</th>
+                      <th>Stok Fisik</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {medicineSummary.recent.length === 0 ? (
+                      <tr><td colSpan="3" style={{ textAlign: "center", padding: 14 }}>Belum ada master obat.</td></tr>
+                    ) : (
+                      medicineSummary.recent.map((m) => {
+                        const stock = (m.batches || []).reduce((acc, b) => acc + Number(b.stock || 0), 0);
+                        return (
+                          <tr key={getId(m)}>
+                            <td><strong>{m.name}</strong></td>
+                            <td>{m.category || "-"}</td>
+                            <td>
+                              <Badge
+                                text={`${stock} unit`}
+                                variant={stock > 10 ? "success" : stock > 0 ? "warning" : "danger"}
+                              />
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Panel>
+          </div>
+
+          {/* Ringkasan Audit Log Rekam Medis */}
+          <Panel
+            title="Ringkasan Audit Rekam Medis"
+            description="5 log akses rekam medis terkini oleh tenaga medis."
+            actionLink="/admin/audit-log"
+            actionLabel="Buka Semua Log Audit →"
+          >
             <div className="admin-audit-table-wrap">
               <table className="admin-audit-table">
-                <thead><tr><th>Antrean</th><th>Tanggal</th><th>Pasien</th><th>Dokter</th><th>Status</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Waktu Akses</th>
+                    <th>Pengguna</th>
+                    <th>Role</th>
+                    <th>Aksi</th>
+                    <th>IP Address</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {appointments.map((item) => (
-                    <tr key={getId(item)}>
-                      <td>{item.queue_number || "-"}</td>
-                      <td>{item.date || "-"}</td>
-                      <td>{item.patient?.name || item.patient_name || item.patient_id || "-"}</td>
-                      <td>{item.doctor?.name || item.doctor_name || item.doctor_id || "-"}</td>
-                      <td>{item.status || "-"}</td>
-                    </tr>
-                  ))}
+                  {recentAuditLogs.length === 0 ? (
+                    <tr><td colSpan="5" style={{ textAlign: "center", padding: 14 }}>Belum ada log audit.</td></tr>
+                  ) : (
+                    recentAuditLogs.map((log) => (
+                      <tr key={getId(log)}>
+                        <td>{log.accessed_at ? new Date(log.accessed_at).toLocaleString("id-ID") : "-"}</td>
+                        <td><strong>{log.user_name || log.user_id || "-"}</strong></td>
+                        <td>{log.user_role || "-"}</td>
+                        <td><span style={{ fontWeight: 600 }}>{log.action || "-"}</span></td>
+                        <td><code>{log.ip_address || "-"}</code></td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           </Panel>
 
-          <Panel title="Riwayat medis pasien" description="Pencarian berdasarkan ID pasien melalui endpoint rekam medis yang diizinkan untuk admin.">
-            <form onSubmit={searchPatientRecords} className="admin-panel-heading">
-              <label>ID pasien <input value={patientId} onChange={(event) => setPatientId(event.target.value)} required /></label>
-              <button type="submit">Cari rekam medis</button>
-            </form>
+          {/* Panel Antrean Hari Ini */}
+          <Panel title="Antrean Pasien Hari Ini" description={`Daftar janji temu aktif pada tanggal ${today()}.`}>
             <div className="admin-audit-table-wrap">
               <table className="admin-audit-table">
-                <thead><tr><th>Tanggal</th><th>Assessment</th><th>Subjective</th><th>Plan</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>No. Antrean</th>
+                    <th>Nama Pasien</th>
+                    <th>Dokter Pemeriksa</th>
+                    <th>Status Alur</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {patientRecords.map((record) => (
-                    <tr key={getId(record)}>
-                      <td>{record.created_at ? new Date(record.created_at).toLocaleString("id-ID") : "-"}</td>
-                      <td>{record.assessment || "-"}</td>
-                      <td>{record.subjective || "-"}</td>
-                      <td>{record.plan || "-"}</td>
-                    </tr>
-                  ))}
+                  {appointments.length === 0 ? (
+                    <tr><td colSpan="4" style={{ textAlign: "center", padding: 14 }}>Tidak ada antrean terdaftar hari ini.</td></tr>
+                  ) : (
+                    appointments.map((item) => (
+                      <tr key={getId(item)}>
+                        <td><strong>{item.queue_number || "-"}</strong></td>
+                        <td>{item.patient?.name || item.patient_name || item.patient_id || "-"}</td>
+                        <td>{item.doctor?.name || item.doctor_name || item.doctor_id || "-"}</td>
+                        <td>
+                          <Badge
+                            text={item.status || "waiting"}
+                            variant={item.status === "completed" ? "success" : item.status === "in_consultation" ? "info" : "warning"}
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
-            {patientRecords.length === 0 && <p>Belum ada data untuk ID pasien yang dicari.</p>}
           </Panel>
 
-          <Panel title="Jadwal dokter" description="Cari jadwal berdasarkan ID profil dokter; administrator dapat membuat, mengubah, dan menonaktifkannya.">
-            <form onSubmit={(event) => { event.preventDefault(); loadSchedules(); }} className="admin-panel-heading">
-              <label>
-                ID profil dokter{" "}
-                <input value={doctorId} onChange={(event) => setDoctorId(event.target.value)} required />
+          {/* Manajemen Jadwal Praktik Dokter */}
+          <Panel title="Pengaturan Jadwal Dokter" description="Cari dan kelola jadwal praktik berdasarkan ID dokter.">
+            <form onSubmit={(event) => { event.preventDefault(); loadSchedules(); }} className="admin-panel-heading" style={{ flexWrap: "wrap", gap: 10 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                ID profil dokter:
+                <input
+                  value={doctorId}
+                  onChange={(event) => setDoctorId(event.target.value)}
+                  placeholder="ID Profil Dokter"
+                  style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #cbd5e1" }}
+                  required
+                />
               </label>
-              <button type="submit">Muat jadwal</button>
+              <button type="submit" className="admin-btn">Muat Jadwal</button>
             </form>
             <div className="admin-audit-table-wrap">
               <table className="admin-audit-table">
-                <thead><tr><th>Tanggal</th><th>Jam</th><th>Kuota</th><th>Status</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>Tanggal</th><th>Jam Praktik</th><th>Kuota</th><th>Status</th><th>Aksi</th></tr></thead>
                 <tbody>
-                  {schedules.map((item) => (
-                    <tr key={getId(item)}>
-                      <td>{item.schedule_date}</td>
-                      <td>{item.start_time} - {item.end_time}</td>
-                      <td>{item.quota}</td>
-                      <td><Badge text={item.is_active ? "Aktif" : "Nonaktif"} variant={item.is_active ? "success" : "warning"} /></td>
-                      <td>
-                        <button
-                          onClick={() => {
-                            setEditingScheduleId(getId(item));
-                            setSchedule({
-                              schedule_date: item.schedule_date || "",
-                              start_time: item.start_time || "",
-                              end_time: item.end_time || "",
-                              quota: String(item.quota || ""),
-                            });
-                          }}
-                          disabled={!item.is_active}
-                        >
-                          Ubah
-                        </button>{" "}
-                        {item.is_active && <button onClick={() => disableSchedule(item)}>Nonaktifkan</button>}
-                      </td>
-                    </tr>
-                  ))}
+                  {schedules.length === 0 ? (
+                    <tr><td colSpan="5" style={{ textAlign: "center", padding: 14 }}>Masukkan ID dokter untuk menampilkan jadwal.</td></tr>
+                  ) : (
+                    schedules.map((item) => (
+                      <tr key={getId(item)}>
+                        <td>{item.schedule_date}</td>
+                        <td>{item.start_time} - {item.end_time}</td>
+                        <td>{item.quota} pasien</td>
+                        <td><Badge text={item.is_active ? "Aktif" : "Nonaktif"} variant={item.is_active ? "success" : "warning"} /></td>
+                        <td>
+                          <button
+                            type="button"
+                            className="admin-btn"
+                            style={{ padding: "3px 8px", fontSize: 12, marginRight: 6 }}
+                            onClick={() => {
+                              setEditingScheduleId(getId(item));
+                              setSchedule({
+                                schedule_date: item.schedule_date || "",
+                                start_time: item.start_time || "",
+                                end_time: item.end_time || "",
+                                quota: String(item.quota || ""),
+                              });
+                            }}
+                            disabled={!item.is_active}
+                          >
+                            Ubah
+                          </button>
+                          {item.is_active && (
+                            <button
+                              type="button"
+                              className="admin-btn"
+                              style={{ padding: "3px 8px", fontSize: 12, color: "#b42318" }}
+                              onClick={() => disableSchedule(item)}
+                            >
+                              Nonaktifkan
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
-            <form onSubmit={saveSchedule} className="admin-panel-heading" style={{ marginTop: 16 }}>
+
+            <form onSubmit={saveSchedule} className="admin-panel-heading" style={{ marginTop: 16, flexWrap: "wrap", gap: 10 }}>
               {!editingScheduleId && (
-                <label>Tanggal <input type="date" value={schedule.schedule_date} onChange={(event) => setSchedule({ ...schedule, schedule_date: event.target.value })} required /></label>
+                <label style={{ fontSize: 13 }}>
+                  Tanggal:{" "}
+                  <input
+                    type="date"
+                    value={schedule.schedule_date}
+                    onChange={(event) => setSchedule({ ...schedule, schedule_date: event.target.value })}
+                    style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #cbd5e1" }}
+                    required
+                  />
+                </label>
               )}
-              <label>Mulai <input type="time" value={schedule.start_time} onChange={(event) => setSchedule({ ...schedule, start_time: event.target.value })} required /></label>
-              <label>Selesai <input type="time" value={schedule.end_time} onChange={(event) => setSchedule({ ...schedule, end_time: event.target.value })} required /></label>
-              <label>Kuota <input type="number" min="1" value={schedule.quota} onChange={(event) => setSchedule({ ...schedule, quota: event.target.value })} required /></label>
-              <button type="submit" disabled={!doctorId}>{editingScheduleId ? "Simpan jadwal" : "Buat jadwal"}</button>
-              {editingScheduleId && <button type="button" onClick={() => { setEditingScheduleId(""); setSchedule({ schedule_date: "", start_time: "", end_time: "", quota: "" }); }}>Batal</button>}
+              <label style={{ fontSize: 13 }}>
+                Mulai:{" "}
+                <input
+                  type="time"
+                  value={schedule.start_time}
+                  onChange={(event) => setSchedule({ ...schedule, start_time: event.target.value })}
+                  style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #cbd5e1" }}
+                  required
+                />
+              </label>
+              <label style={{ fontSize: 13 }}>
+                Selesai:{" "}
+                <input
+                  type="time"
+                  value={schedule.end_time}
+                  onChange={(event) => setSchedule({ ...schedule, end_time: event.target.value })}
+                  style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #cbd5e1" }}
+                  required
+                />
+              </label>
+              <label style={{ fontSize: 13 }}>
+                Kuota:{" "}
+                <input
+                  type="number"
+                  min="1"
+                  value={schedule.quota}
+                  onChange={(event) => setSchedule({ ...schedule, quota: event.target.value })}
+                  style={{ padding: "4px 8px", borderRadius: 6, border: "1px solid #cbd5e1", width: 70 }}
+                  required
+                />
+              </label>
+              <button type="submit" disabled={!doctorId} className="admin-btn admin-btn-primary">
+                {editingScheduleId ? "Simpan Perubahan" : "Tambah Jadwal Baru"}
+              </button>
+              {editingScheduleId && (
+                <button
+                  type="button"
+                  className="admin-btn"
+                  onClick={() => {
+                    setEditingScheduleId("");
+                    setSchedule({ schedule_date: "", start_time: "", end_time: "", quota: "" });
+                  }}
+                >
+                  Batal
+                </button>
+              )}
             </form>
           </Panel>
 
-          <Panel title="Inventaris obat" description="Detail obat dan penghapusan master obat (tindakan admin).">
+          {/* Pencarian Riwayat Rekam Medis Pasien */}
+          <Panel title="Pencarian Rekam Medis Pasien" description="Cari rekam medis berdasarkan ID pasien terdaftar.">
+            <form onSubmit={searchPatientRecords} className="admin-panel-heading" style={{ flexWrap: "wrap", gap: 10 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
+                ID pasien:
+                <input
+                  value={patientId}
+                  onChange={(event) => setPatientId(event.target.value)}
+                  placeholder="ID Pasien"
+                  style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #cbd5e1" }}
+                  required
+                />
+              </label>
+              <button type="submit" className="admin-btn" disabled={searchingRecords}>
+                {searchingRecords ? "Mencari..." : "Cari Rekam Medis"}
+              </button>
+            </form>
             <div className="admin-audit-table-wrap">
               <table className="admin-audit-table">
-                <thead><tr><th>Nama</th><th>Kategori</th><th>Harga dasar</th><th>Jumlah batch</th><th>Aksi</th></tr></thead>
+                <thead><tr><th>Tanggal Periksa</th><th>Assessment / Diagnosa</th><th>Keluhan (Subjective)</th><th>Plan / Rencana</th></tr></thead>
                 <tbody>
-                  {medicines.map((medicine) => (
-                    <tr key={getId(medicine)}>
-                      <td>{medicine.name}</td><td>{medicine.category || "-"}</td>
-                      <td>{money(medicine.base_price)}</td><td>{medicine.batches?.length || 0}</td>
-                      <td><button onClick={() => showMedicine(medicine)}>Detail</button>{" "}<button onClick={() => removeMedicine(medicine)}>Hapus</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Panel>
-
-          <Panel title="Tagihan" description="Daftar dan detail billing; administrator juga dapat mencatat pembayaran.">
-            <div className="admin-audit-table-wrap">
-              <table className="admin-audit-table">
-                <thead><tr><th>ID</th><th>Appointment</th><th>Jumlah</th><th>Status</th><th>Aksi</th></tr></thead>
-                <tbody>
-                  {billings.map((billing) => (
-                    <tr key={getId(billing)}>
-                      <td>{getId(billing)}</td><td>{billing.appointment_id || "-"}</td>
-                      <td>{money(billing.total_amount)}</td>
-                      <td>{billing.payment_status || "-"}</td>
-                      <td><button onClick={() => showBilling(billing)}>Detail</button></td>
-                    </tr>
-                  ))}
+                  {patientRecords.length === 0 ? (
+                    <tr><td colSpan="4" style={{ textAlign: "center", padding: 14 }}>Belum ada hasil pencarian rekam medis.</td></tr>
+                  ) : (
+                    patientRecords.map((record) => (
+                      <tr key={getId(record)}>
+                        <td>{record.created_at ? new Date(record.created_at).toLocaleString("id-ID") : "-"}</td>
+                        <td><strong>{record.assessment || "-"}</strong></td>
+                        <td>{record.subjective || "-"}</td>
+                        <td>{record.plan || "-"}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
           </Panel>
         </main>
       </div>
-
-      {selectedMedicine && (
-        <div className="modal-overlay" onClick={() => setSelectedMedicine(null)}>
-          <div className="modal-content" onClick={(event) => event.stopPropagation()}>
-            <div className="modal-header"><span className="modal-title">{selectedMedicine.name}</span><button className="modal-close" onClick={() => setSelectedMedicine(null)}>✕</button></div>
-            <p>{selectedMedicine.category} · {money(selectedMedicine.base_price)}</p>
-            <ul>{(selectedMedicine.batches || []).map((batch, index) => <li key={batch.batch_no || index}>{batch.batch_no}: {batch.stock} unit · exp {batch.exp_date}</li>)}</ul>
-          </div>
-        </div>
-      )}
-      {selectedBilling && (
-        <div className="modal-overlay" onClick={() => setSelectedBilling(null)}>
-          <div className="modal-content" onClick={(event) => event.stopPropagation()}>
-            <div className="modal-header"><span className="modal-title">Detail Tagihan</span><button className="modal-close" onClick={() => setSelectedBilling(null)}>✕</button></div>
-            <p>ID: {getId(selectedBilling)}</p>
-            <p>Appointment: {selectedBilling.appointment_id || "-"}</p>
-            <p>Jasa dokter: {money(selectedBilling.doctor_fee)}</p>
-            <p>Biaya obat: {money(selectedBilling.medicine_fee)}</p>
-            <p>Total: {money(selectedBilling.total_amount)}</p>
-            <p>Status: {selectedBilling.payment_status}</p>
-            <button onClick={() => setSelectedBilling(null)}>Tutup</button>{" "}
-            {selectedBilling.payment_status === "unpaid" && <button onClick={markPaid}>Tandai lunas (tunai)</button>}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

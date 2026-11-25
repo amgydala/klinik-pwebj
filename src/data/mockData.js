@@ -12,6 +12,9 @@ export const adminNama = "Administrator Klinik";
 
 export const adminMenu = [
   { path: "/admin/beranda", label: "Beranda" },
+  { path: "/admin/tagihan", label: "Tagihan & Billing" },
+  { path: "/admin/inventaris-obat", label: "Inventaris Obat" },
+  { path: "/admin/audit-log", label: "Audit Rekam Medis" },
   { path: "/admin/registrasi-staf", label: "Registrasi Dokter / Apoteker" },
 ];
 
