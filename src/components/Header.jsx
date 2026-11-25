@@ -36,6 +36,7 @@ function Header({ userName, searchValue, onSearchChange, searchPlaceholder }) {
             className="header-search-input"
             placeholder={searchPlaceholder || "Cari menu, pasien, atau nomor antrean..."}
             value={searchValue ?? ""}
+            readOnly={!onSearchChange}
             onChange={onSearchChange ? (e) => onSearchChange(e.target.value) : undefined}
           />
           <span className="header-search-shortcut">⌘ K</span>

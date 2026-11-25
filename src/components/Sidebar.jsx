@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { logoutUser } from "../data/authService";
 import "./Sidebar.css";
 
@@ -84,7 +84,20 @@ const getMenuIcon = (label) => {
 
 function Sidebar({ menuItems }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+
+  const handleLogout = async (event) => {
+    event.preventDefault();
+    setIsMobileOpen(false);
+    try {
+      await logoutUser();
+    } catch (error) {
+      window.alert(`Sesi lokal sudah ditutup, tetapi logout server gagal: ${error.message}`);
+    } finally {
+      navigate("/login", { replace: true });
+    }
+  };
 
   // Listen untuk event toggle mobile drawer dari Header
   useEffect(() => {
@@ -173,10 +186,7 @@ function Sidebar({ menuItems }) {
 
           <Link
             to="/login"
-            onClick={() => {
-              setIsMobileOpen(false);
-              logoutUser();
-            }}
+            onClick={handleLogout}
             className="sidebar-item sidebar-item-logout"
           >
             <span className="sidebar-item-icon"><LogoutIcon /></span>

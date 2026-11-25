@@ -17,9 +17,9 @@ const antreanTagihan = [
 
 function Beranda() {
   return (
-    <div style={{ display: "flex" }}>
+    <div style={{ display: "flex", height: "100dvh" }}>
       <Sidebar menuItems={cashierMenu} />
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, minWidth: 0, height: "100dvh", overflowY: "auto" }}>
         <Header userName="Kasir Nanda" />
         <div className="page-content">
           <h1 className="greeting">Selamat datang kembali, KASIR NANDA!</h1>

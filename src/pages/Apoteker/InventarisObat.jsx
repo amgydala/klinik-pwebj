@@ -1,178 +1,212 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
-import { apotekerMenu, apotekerNama, dataObatAwal, kategoriList } from "../../data/mockData";
+import { apotekerMenu } from "../../data/mockData";
+import {
+  getCurrentUser,
+  getMedicines,
+  getMedicineDetails,
+  updateMedicine,
+} from "../../data/authService";
 import "./InventarisObat.css";
 
+const getId = (medicine) => medicine.id || medicine._id;
+const stockTotal = (medicine) =>
+  (medicine.batches || []).reduce((total, batch) => total + Number(batch.stock || 0), 0);
+const isExpiringSoon = (date) => {
+  if (!date) return false;
+  const expiry = new Date(`${date}T00:00:00`);
+  const days = (expiry - new Date()) / (1000 * 60 * 60 * 24);
+  return days >= 0 && days <= 90;
+};
+
 function InventarisObat() {
-  const [dataObat, setDataObat] = useState(dataObatAwal);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [modalDetail, setModalDetail] = useState(null);
-  const [modalEdit, setModalEdit] = useState(null);
+  const user = getCurrentUser();
+  const [medicines, setMedicines] = useState([]);
+  const [search, setSearch] = useState("");
+  const [modalMedicine, setModalMedicine] = useState(null);
+  const [editing, setEditing] = useState(null);
+  const [price, setPrice] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  // Form state buat edit
-  const [editNama, setEditNama] = useState("");
-  const [editKategori, setEditKategori] = useState("");
-  const [editTotalStok, setEditTotalStok] = useState("");
-  const [editHarga, setEditHarga] = useState("");
+  const loadMedicines = useCallback(async () => {
+    setLoading(true);
+    try {
+      setMedicines(await getMedicines());
+      setError("");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const filteredObat = dataObat.filter((obat) =>
-    obat.nama.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    loadMedicines();
+  }, [loadMedicines]);
+
+  const filtered = useMemo(
+    () => medicines.filter((medicine) =>
+      medicine.name?.toLowerCase().includes(search.toLowerCase())
+    ),
+    [medicines, search]
   );
 
-  const bukaModalEdit = (obat) => {
-    setModalEdit(obat);
-    setEditNama(obat.nama);
-    setEditKategori(obat.kategori);
-    setEditTotalStok(obat.totalStok);
-    setEditHarga(obat.harga);
+  const savePrice = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      await updateMedicine(getId(editing), { base_price: Number(price) });
+      setEditing(null);
+      setMessage("Harga dasar berhasil diperbarui.");
+      await loadMedicines();
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const simpanEdit = () => {
-    setDataObat((prev) =>
-      prev.map((o) =>
-        o.id === modalEdit.id
-          ? { ...o, nama: editNama, kategori: editKategori, totalStok: Number(editTotalStok), harga: Number(editHarga) }
-          : o
-      )
-    );
-    setModalEdit(null);
+  const showDetails = async (medicine) => {
+    setError("");
+    try {
+      const details = await getMedicineDetails(getId(medicine));
+      setModalMedicine(details.medicine || details);
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div style={{ display: "flex", height: "100dvh" }}>
       <Sidebar menuItems={apotekerMenu} />
-      <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
+      <div style={{ flex: 1, height: "100dvh", minWidth: 0, overflowY: "auto" }}>
         <Header
-          userName={apotekerNama}
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
+          userName={user?.name || "Apoteker"}
+          searchValue={search}
+          onSearchChange={setSearch}
           searchPlaceholder="Cari nama obat..."
         />
         <div className="page-content">
+          {error && <div role="alert" className="empty-state">{error}</div>}
+          {message && <div role="status" className="empty-state">{message}</div>}
           <div className="table-card">
             <div className="table-header-row">
               <div className="table-title">Inventaris Obat</div>
+              <Link className="btn-submit" to="/apoteker/tambah-obat">+ Obat Baru</Link>
             </div>
-
             <table>
               <thead>
                 <tr>
                   <th>Nama Obat</th>
                   <th>Kategori</th>
-                  <th>Total Stok Keseluruhan</th>
+                  <th>Total Stok</th>
                   <th>Harga Dasar</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredObat.map((obat) => (
-                  <tr key={obat.id}>
-                    <td>{obat.nama}</td>
-                    <td>{obat.kategori}</td>
-                    <td>{obat.totalStok}</td>
-                    <td>Rp {obat.harga.toLocaleString("id-ID")}</td>
+                {filtered.map((medicine) => (
+                  <tr key={getId(medicine)}>
+                    <td>{medicine.name}</td>
+                    <td>{medicine.category || "-"}</td>
+                    <td>{stockTotal(medicine)}</td>
+                    <td>Rp {Number(medicine.base_price || 0).toLocaleString("id-ID")}</td>
                     <td>
-                      <button className="btn-edit" onClick={() => bukaModalEdit(obat)}>
-                        Edit
+                      <button
+                        className="btn-edit"
+                        onClick={() => {
+                          setEditing(medicine);
+                          setPrice(String(medicine.base_price || ""));
+                        }}
+                      >
+                        Ubah harga
+                      </button>{" "}
+                      <button className="btn-detail" onClick={() => showDetails(medicine)}>
+                        Batch
                       </button>
-                      {obat.batch && (
-                        <button className="btn-detail" onClick={() => setModalDetail(obat)}>
-                          Detail
-                        </button>
-                      )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-
-            {filteredObat.length === 0 && (
+            {loading && <div className="empty-state">Memuat inventaris...</div>}
+            {!loading && filtered.length === 0 && (
               <div className="empty-state">Tidak ada obat yang cocok dengan pencarian.</div>
             )}
-
-            <button className="btn-pasok">+ Pasok Obat Baru</button>
+          </div>
+          <div role="note" className="empty-state" style={{ marginTop: 16 }}>
+            Penambahan stok ke batch obat lama belum tersedia di kontrak API yang terdokumentasi.
           </div>
         </div>
       </div>
 
-      {/* Modal Detail Batch */}
-      {modalDetail && (
-        <div className="modal-overlay" onClick={() => setModalDetail(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      {modalMedicine && (
+        <div className="modal-overlay" onClick={() => setModalMedicine(null)}>
+          <div className="modal-content" onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
-              <span className="modal-title">Detail Batch - {modalDetail.nama}</span>
-              <button className="modal-close" onClick={() => setModalDetail(null)}>✕</button>
+              <span className="modal-title">Batch - {modalMedicine.name}</span>
+              <button className="modal-close" onClick={() => setModalMedicine(null)}>✕</button>
             </div>
             <table className="batch-table">
               <thead>
-                <tr>
-                  <th>Batch No</th>
-                  <th>Sisa Stok</th>
-                  <th>Exp Date (FEFO)</th>
-                  <th>Status Peringatan</th>
-                </tr>
+                <tr><th>Batch</th><th>Stok</th><th>Kedaluwarsa</th><th>Status</th></tr>
               </thead>
               <tbody>
-                {modalDetail.batch.map((b) => (
-                  <tr key={b.batchNo}>
-                    <td>{b.batchNo}</td>
-                    <td>{b.sisaStok}</td>
-                    <td>{b.expDate}</td>
-                    <td>
-                      <Badge
-                        text={b.status === "Kuning" ? "Kuning/Dekat" : "Hijau/Aman"}
-                        variant={b.status === "Kuning" ? "warning" : "success"}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                {(modalMedicine.batches || []).map((batch, index) => {
+                  const expiring = isExpiringSoon(batch.exp_date);
+                  return (
+                    <tr key={batch.batch_no || index}>
+                      <td>{batch.batch_no || "-"}</td>
+                      <td>{batch.stock ?? 0}</td>
+                      <td>{batch.exp_date || "-"}</td>
+                      <td>
+                        <Badge
+                          text={expiring ? "Segera kedaluwarsa" : "Tersedia"}
+                          variant={expiring ? "warning" : "success"}
+                        />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {/* Modal Edit */}
-      {modalEdit && (
-        <div className="modal-overlay" onClick={() => setModalEdit(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      {editing && (
+        <div className="modal-overlay" onClick={() => setEditing(null)}>
+          <form className="modal-content" onSubmit={savePrice} onClick={(event) => event.stopPropagation()}>
             <div className="modal-header">
-              <span className="modal-title">Edit Obat</span>
-              <button className="modal-close" onClick={() => setModalEdit(null)}>✕</button>
+              <span className="modal-title">Ubah Harga - {editing.name}</span>
+              <button type="button" className="modal-close" onClick={() => setEditing(null)}>✕</button>
             </div>
-
             <div className="form-group">
-              <label>Nama Obat</label>
-              <input type="text" value={editNama} onChange={(e) => setEditNama(e.target.value)} />
+              <label htmlFor="medicine-price">Harga dasar</label>
+              <input
+                id="medicine-price"
+                type="number"
+                min="0"
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                required
+              />
             </div>
-
-            <div className="form-group">
-              <label>Kategori</label>
-              <select value={editKategori} onChange={(e) => setEditKategori(e.target.value)}>
-                {kategoriList.map((k) => (
-                  <option key={k} value={k}>{k}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Total Stok</label>
-                <input type="number" value={editTotalStok} onChange={(e) => setEditTotalStok(e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>Harga Dasar</label>
-                <input type="number" value={editHarga} onChange={(e) => setEditHarga(e.target.value)} />
-              </div>
-            </div>
-
             <div className="action-row">
-              <button className="btn-batal" onClick={() => setModalEdit(null)}>Batal</button>
-              <button className="btn-submit" onClick={simpanEdit}>Simpan Perubahan</button>
+              <button type="button" className="btn-batal" onClick={() => setEditing(null)}>Batal</button>
+              <button type="submit" className="btn-submit" disabled={saving}>
+                {saving ? "Menyimpan..." : "Simpan"}
+              </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
     </div>

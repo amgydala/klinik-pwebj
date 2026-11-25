@@ -28,7 +28,6 @@ function Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -39,7 +38,7 @@ function Register() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -80,10 +79,8 @@ function Register() {
     }
 
     setLoading(true);
-
     try {
-      // 1. Buat record pasien lokal dengan ID dummy baru & kelengkapan awal 30%
-      const newPatient = registerPatient({
+      await registerPatient({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -91,32 +88,15 @@ function Register() {
         password: formData.password,
       });
 
-      setSuccessMsg(
-        `Registrasi berhasil! Akun ID [${newPatient.id}] telah dibuat. Mengarahkan ke dashboard...`
-      );
-
-      // 2. Arahkan ke dashboard pasien setelah jeda singkat
-      setTimeout(() => {
-        navigate("/patient/beranda");
-      }, 700);
+      navigate("/login", {
+        replace: true,
+        state: { success: "Registrasi berhasil. Silakan masuk dengan akun baru Anda." },
+      });
     } catch (err) {
-      setErrorMsg("Terjadi kendala saat registrasi. Silakan coba kembali.");
+      setErrorMsg(err.message || "Terjadi kendala saat registrasi. Silakan coba kembali.");
+    } finally {
       setLoading(false);
     }
-  };
-
-  // Demo auto-fill helper untuk mempercepat presentasi
-  const handleDemoFill = () => {
-    setFormData({
-      name: "Budi Santoso",
-      email: "budi.demo@example.test",
-      phone: "080000001001",
-      address: "Jl. Contoh No. 10, Kota Demo",
-      password: "password123",
-      confirmPassword: "password123",
-      agreeTerms: true,
-    });
-    setErrorMsg("");
   };
 
   return (
@@ -149,35 +129,19 @@ function Register() {
       {/* Sisi Kanan: Panel Form Registrasi */}
       <div className="auth-panel">
         <div className="auth-card auth-card-wide">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
             <div>
               <h1 className="auth-title">Registrasi Pasien Baru</h1>
               <p className="auth-subtitle">
                 Buat akun untuk mengakses pendaftaran antrean dan rekam medis Anda.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleDemoFill}
-              className="demo-reset-btn"
-              title="Isi form otomatis dengan data contoh Budi Santoso"
-              style={{ border: "1px solid #cbd5e1" }}
-            >
-              ⚡ Isi Contoh
-            </button>
           </div>
 
           {errorMsg && (
             <div className="auth-alert auth-alert-error" role="alert">
               <span>⚠️</span>
               <span>{errorMsg}</span>
-            </div>
-          )}
-
-          {successMsg && (
-            <div className="auth-alert auth-alert-success" role="status">
-              <span>✅</span>
-              <span>{successMsg}</span>
             </div>
           )}
 

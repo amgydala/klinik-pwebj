@@ -18,7 +18,8 @@
   background: white;
   border-radius: 12px;
   padding: 24px;
-  max-width: 760px;
+  width: 100%;
+  max-width: none;
 }
 
 .pasien-card-title {
@@ -46,13 +47,15 @@
 }
 
 .pasien-form-group input,
-.pasien-form-group select {
+.pasien-form-group select,
+.pasien-form-group textarea {
   width: 100%;
   padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   font-size: 14px;
   box-sizing: border-box;
+  font-family: inherit;
 }
 
 .pasien-rekomendasi {
@@ -143,6 +146,12 @@
   color: white;
   cursor: pointer;
   font-weight: 500;
+}
+
+.pasien-btn-submit:disabled,
+.pasien-modal-btn-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {

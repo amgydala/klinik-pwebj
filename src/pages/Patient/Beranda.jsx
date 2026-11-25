@@ -3,75 +3,232 @@ import { Link, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
+import { patientMenu } from "../../data/mockData";
 import {
-  patientNama,
-  patientMenu,
-  infoKesehatanPasien as defaultInfoKesehatan,
-  statusAntreanPasien as defaultStatusAntrean,
-  riwayatKunjunganPasien as defaultRiwayatKunjungan,
-  riwayatMedisPasien,
-} from "../../data/mockData";
-import { getCurrentUser, setCurrentUser } from "../../data/authService";
+  getCurrentUser,
+  getPatientAppointments,
+  getPatientMedicalRecords,
+  getPatientProfile,
+  setCurrentUser,
+  updatePatientProfile,
+} from "../../data/authService";
 import "./Beranda.css";
+
+const normalizeProfile = (response, currentUser) => {
+  const profile = response?.patient_profile || {};
+  const completeness = response?.profile_completeness || {};
+  const profileFields = { ...profile };
+  delete profileFields.id;
+  return {
+    ...currentUser,
+    ...(response?.user || {}),
+    ...profileFields,
+    is_appointment_ready:
+      completeness.is_appointment_ready ??
+      currentUser?.is_appointment_ready ??
+      false,
+    completeness:
+      completeness.percentage ?? currentUser?.completeness ?? 30,
+    profile_completeness: completeness,
+    allergies: profile.allergies || [],
+    chronic_diseases: profile.chronic_diseases || [],
+  };
+};
+
+const profileFormValues = (user) => ({
+  nik: user?.nik || "",
+  bpjs_number: user?.bpjs_number || "",
+  place_of_birth: user?.place_of_birth || "",
+  date_of_birth: user?.date_of_birth || "",
+  gender: user?.gender || "",
+  blood_type: user?.blood_type || "",
+  rhesus: user?.rhesus || "",
+  marital_status: user?.marital_status || "",
+  occupation: user?.occupation || "",
+  allergies: Array.isArray(user?.allergies) ? user.allergies.join(", ") : "",
+  chronic_diseases: Array.isArray(user?.chronic_diseases)
+    ? user.chronic_diseases.join(", ")
+    : "",
+  emergency_contact_name: user?.emergency_contact_name || "",
+  emergency_contact_phone: user?.emergency_contact_phone || "",
+  emergency_contact_relation: user?.emergency_contact_relation || "",
+});
+
+const listValues = (value) =>
+  value.split(",").map((item) => item.trim()).filter(Boolean);
+
+const calculateAge = (dateOfBirth) => {
+  if (!dateOfBirth) return "—";
+  const birthDate = new Date(`${dateOfBirth}T00:00:00`);
+  if (Number.isNaN(birthDate.getTime())) return "—";
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const birthdayHasPassed =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate());
+  if (!birthdayHasPassed) age -= 1;
+  return age >= 0 ? `${age} tahun` : "—";
+};
+
+const normalizeMedicalRecord = (record, index) => {
+  const appointment = record.appointment || {};
+  const doctor = record.doctor || appointment.doctor || {};
+  const date =
+    record.date ||
+    record.created_at ||
+    appointment.date ||
+    appointment.appointment_date;
+  const prescriptions = record.prescriptions || record.prescription || [];
+  return {
+    id: record.id || record._id || `medical-record-${index}`,
+    tanggal: date ? String(date).slice(0, 10) : "Tanggal tidak tersedia",
+    dokter:
+      doctor.name ||
+      doctor.user?.name ||
+      record.doctor_name ||
+      appointment.doctor_name ||
+      "Dokter tidak tersedia",
+    poli: doctor.specialization || record.specialization || "—",
+    diagnosa: record.assessment || record.diagnosis || "Belum dicatat",
+    soap: {
+      subjective: record.subjective || record.soap?.subjective || "—",
+      objective: record.objective || record.soap?.objective || "—",
+      assessment: record.assessment || record.soap?.assessment || "—",
+      plan: record.plan || record.soap?.plan || "—",
+    },
+    resep: Array.isArray(prescriptions)
+      ? prescriptions.map((prescription, prescriptionIndex) => ({
+          id: prescription.id || prescription._id || prescriptionIndex,
+          nama:
+            prescription.medicine?.name ||
+            prescription.medicine_name ||
+            prescription.name ||
+            "Obat",
+          jumlah: prescription.quantity ?? prescription.amount ?? "—",
+          aturan:
+            prescription.instructions ||
+            prescription.usage ||
+            prescription.dosage ||
+            "Ikuti petunjuk dokter",
+        }))
+      : [],
+  };
+};
 
 function Beranda() {
   const navigate = useNavigate();
   const [user, setUser] = useState(() => getCurrentUser());
+  const [appointments, setAppointments] = useState([]);
+  const [medicalRecords, setMedicalRecords] = useState([]);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [profileError, setProfileError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedSoap, setSelectedSoap] = useState(null);
-  const [modalData, setModalData] = useState({
-    nik: "",
-    date_of_birth: "",
-    gender: "Laki-laki",
-    blood_type: "O",
-  });
+  const [modalData, setModalData] = useState(() =>
+    profileFormValues(getCurrentUser())
+  );
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
-    const active = getCurrentUser();
-    setUser(active);
-    if (active) {
-      setModalData({
-        nik: active.nik || "",
-        date_of_birth: active.date_of_birth || "",
-        gender: active.gender || "Laki-laki",
-        blood_type: active.blood_type || "O",
-      });
-    }
+    let active = true;
+    const loadPatientData = async () => {
+      try {
+        const profile = await getPatientProfile();
+        if (!active) return;
+        const updatedUser = normalizeProfile(profile, getCurrentUser());
+        setUser(updatedUser);
+        setCurrentUser(updatedUser);
+        setModalData(profileFormValues(updatedUser));
+        setProfileError("");
+      } catch (error) {
+        if (active) setProfileError(error.message);
+      } finally {
+        if (active) setLoadingProfile(false);
+      }
+
+      try {
+        const result = await getPatientAppointments("?status=waiting");
+        if (active) setAppointments(result);
+      } catch (error) {
+        if (active) setProfileError((current) =>
+          current ? `${current} ${error.message}` : error.message
+        );
+      }
+
+      try {
+        const result = await getPatientMedicalRecords(getCurrentUser().id);
+        if (active) setMedicalRecords(result.map(normalizeMedicalRecord));
+      } catch (error) {
+        if (active) setProfileError((current) =>
+          current ? `${current} ${error.message}` : error.message
+        );
+      }
+    };
+
+    loadPatientData();
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    if (!modalData.nik || !modalData.date_of_birth) {
-      alert("Harap isi NIK dan Tanggal Lahir.");
+    if (
+      !modalData.nik ||
+      !modalData.place_of_birth ||
+      !modalData.date_of_birth ||
+      !modalData.gender ||
+      !modalData.blood_type ||
+      !modalData.emergency_contact_name ||
+      !modalData.emergency_contact_phone
+    ) {
+      setProfileError("Lengkapi semua data wajib profil pasien terlebih dahulu.");
       return;
     }
 
-    const updatedUser = {
-      ...user,
-      ...modalData,
-      is_appointment_ready: true,
-      completeness: 80, // Profil kritis lengkap (80%)
-    };
-
-    setCurrentUser(updatedUser);
-    setUser(updatedUser);
-    setSaveSuccess(true);
-    setTimeout(() => {
-      setSaveSuccess(false);
-      setShowModal(false);
-    }, 900);
+    setSavingProfile(true);
+    setProfileError("");
+    try {
+      await updatePatientProfile({
+        ...modalData,
+        allergies: listValues(modalData.allergies),
+        chronic_diseases: listValues(modalData.chronic_diseases),
+      });
+      const profile = await getPatientProfile();
+      const updatedUser = normalizeProfile(profile, user);
+      setCurrentUser(updatedUser);
+      setUser(updatedUser);
+      setModalData(profileFormValues(updatedUser));
+      setSaveSuccess(true);
+      setTimeout(() => {
+        setSaveSuccess(false);
+        setShowModal(false);
+      }, 900);
+    } catch (error) {
+      setProfileError(error.message);
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
-  const displayName = user?.name || patientNama;
-  const isReady = user ? user.is_appointment_ready : true;
-  const completeness = user?.completeness ?? 100;
-  const bloodType = user?.blood_type || defaultInfoKesehatan.golonganDarah || "O";
-
-  // Data alergi contoh sesuai contohwireframe1.png
-  const userAllergies = (user?.allergies && user.allergies.length > 0)
-    ? user.allergies
-    : ["Alergi Penisilin", "Alergi Udang"];
+  const displayName = user?.name || "Pasien";
+  const isReady = Boolean(user?.is_appointment_ready);
+  const completeness = user?.completeness ?? 30;
+  const bloodType = user?.blood_type || "Belum diisi";
+  const userAllergies = user?.allergies || [];
+  const activeAppointment = appointments[0];
+  const appointmentDoctor =
+    activeAppointment?.doctor?.name ||
+    activeAppointment?.doctor?.user?.name ||
+    activeAppointment?.doctor_name ||
+    "Belum ditentukan";
+  const appointmentDate =
+    activeAppointment?.date || activeAppointment?.appointment_date || "—";
+  const appointmentQueue =
+    activeAppointment?.queue_number || activeAppointment?.queueNumber || "—";
+  const appointmentStatus = activeAppointment?.status || "Belum ada antrean";
 
   return (
     <div className="patient-layout">
@@ -80,6 +237,12 @@ function Beranda() {
         <Header userName={displayName} />
 
         <div className="pasien-content">
+          {profileError && (
+            <div className="auth-alert auth-alert-error" role="alert">
+              {profileError}
+            </div>
+          )}
+
           {/* Hero Welcome Banner sesuai contohwireframe1.png */}
           <div className="pasien-welcome-card">
             <div className="pasien-welcome-left">
@@ -104,7 +267,7 @@ function Beranda() {
           </div>
 
           {/* Banner Kelengkapan Profil Pasien Sesuai DEMO_ALUR_SIMKLINIK.md Section 4.A & 4.B */}
-          {!isReady && (
+          {!loadingProfile && !isReady && (
             <div className="pasien-profile-alert">
               <div className="pasien-alert-left">
                 <div className="pasien-alert-icon">⚠️</div>
@@ -133,7 +296,7 @@ function Beranda() {
             </div>
           )}
 
-          {isReady && user?.completeness && user.completeness < 100 && (
+          {!loadingProfile && isReady && completeness < 100 && (
             <div className="pasien-profile-alert pasien-profile-ready">
               <div className="pasien-alert-left">
                 <div className="pasien-alert-icon">✅</div>
@@ -169,31 +332,43 @@ function Beranda() {
               {/* Blood Type Display Circular Badge */}
               <div className="pasien-blood-type-row">
                 <span className="pasien-blood-type-label">Blood type:</span>
-                <span className="pasien-blood-type-badge">{bloodType}</span>
+                <span
+                  className={`pasien-blood-type-badge ${
+                    bloodType === "Belum diisi" ? "pasien-blood-type-placeholder" : ""
+                  }`}
+                >
+                  {bloodType}
+                </span>
               </div>
 
               {/* Allergy Badges (Chips) */}
               <div className="pasien-allergy-row">
-                {userAllergies.map((allergy, idx) => (
+                {userAllergies.length ? userAllergies.map((allergy, idx) => (
                   <span key={idx} className="pasien-allergy-chip">
                     {idx === 0 ? "⚠️" : "[!]"} {allergy}
                   </span>
-                ))}
+                )) : <span>Belum ada data alergi</span>}
               </div>
 
               {/* Detail Info Grid */}
               <div className="pasien-info-grid">
                 <div>
                   <div className="pasien-info-label">No. Rekam Medis</div>
-                  <div className="pasien-info-value">{user?.id ? `RM-${user.id}` : defaultInfoKesehatan.noRekamMedis}</div>
+                  <div className="pasien-info-value">
+                    {user?.medical_record_number || user?.medical_record_id || "—"}
+                  </div>
                 </div>
                 <div>
                   <div className="pasien-info-label">Penjamin</div>
-                  <div className="pasien-info-value">{defaultInfoKesehatan.penjamin}</div>
+                  <div className="pasien-info-value">
+                    {user?.bpjs_number ? "BPJS" : "—"}
+                  </div>
                 </div>
                 <div>
                   <div className="pasien-info-label">Usia</div>
-                  <div className="pasien-info-value">{defaultInfoKesehatan.usia}</div>
+                  <div className="pasien-info-value">
+                    {calculateAge(user?.date_of_birth)}
+                  </div>
                 </div>
                 <div>
                   <div className="pasien-info-label">Status Pasien</div>
@@ -229,7 +404,7 @@ function Beranda() {
                   <div className="pasien-antrean-status-pill">
                     <span className="pasien-status-dot"></span>
                     <span className="pasien-status-text">
-                      {defaultStatusAntrean.status.toUpperCase()}
+                      {appointmentStatus.toUpperCase()}
                     </span>
                   </div>
                   <div className="pasien-antrean-clock">
@@ -237,7 +412,11 @@ function Beranda() {
                       <circle cx="12" cy="12" r="10" />
                       <polyline points="12 6 12 12 16 14" />
                     </svg>
-                    <span>{defaultStatusAntrean.jam}</span>
+                    <span>
+                      {activeAppointment?.practice_start_time ||
+                        activeAppointment?.start_time ||
+                        "—"}
+                    </span>
                   </div>
                 </div>
 
@@ -245,21 +424,21 @@ function Beranda() {
                 <div className="pasien-antrean-detail-row">
                   <span className="pasien-antrean-row-icon">👤</span>
                   <span className="pasien-antrean-row-label">Dokter:</span>
-                  <span className="pasien-antrean-row-val">{defaultStatusAntrean.dokter}</span>
+                  <span className="pasien-antrean-row-val">{appointmentDoctor}</span>
                 </div>
 
                 {/* Info Tanggal */}
                 <div className="pasien-antrean-detail-row">
                   <span className="pasien-antrean-row-icon">📅</span>
                   <span className="pasien-antrean-row-label">Tanggal:</span>
-                  <span className="pasien-antrean-row-val">{defaultStatusAntrean.tanggal}</span>
+                  <span className="pasien-antrean-row-val">{appointmentDate}</span>
                 </div>
 
                 {/* Nomor Antrean Bracketed Display sesuai contohwireframe1.png */}
                 <div className="pasien-antrean-nomor-wrap">
                   <span className="pasien-antrean-row-label">Nomor Antrean:</span>
                   <span className="pasien-antrean-badge-large">
-                    [ {defaultStatusAntrean.noAntrean} ]
+                    [ {appointmentQueue} ]
                   </span>
                 </div>
               </div>
@@ -316,14 +495,16 @@ function Beranda() {
                   </tr>
                 </thead>
                 <tbody>
-                  {defaultRiwayatKunjungan.map((row) => (
+                  {medicalRecords.map((row) => (
                     <tr key={row.id}>
                       <td>
                         <div className="table-cell-with-icon">
                           <span className="table-icon">📅</span>
                           <div>
                             <div className="table-main-text">{row.tanggal}</div>
-                            <div className="table-sub-text">08:30 WIB</div>
+                            <div className="table-sub-text">
+                              {row.poli}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -332,7 +513,7 @@ function Beranda() {
                           <span className="table-icon">👤</span>
                           <div>
                             <div className="table-main-text">{row.dokter}</div>
-                            <div className="table-sub-text">{row.poli}</div>
+                            <div className="table-sub-text">Dokter pemeriksa</div>
                           </div>
                         </div>
                       </td>
@@ -341,7 +522,7 @@ function Beranda() {
                           <span className="table-icon">📄</span>
                           <div>
                             <div className="table-main-text">{row.diagnosa}</div>
-                            <div className="table-sub-text">Keluhan teratasi</div>
+                            <div className="table-sub-text">Rekam medis</div>
                           </div>
                         </div>
                       </td>
@@ -349,16 +530,20 @@ function Beranda() {
                         <button
                           type="button"
                           className="btn-soap-view"
-                          onClick={() => {
-                            const found = riwayatMedisPasien.find((m) => m.id === row.id) || riwayatMedisPasien[0];
-                            setSelectedSoap(found);
-                          }}
+                          onClick={() => setSelectedSoap(row)}
                         >
                           👁️ Lihat SOAP
                         </button>
                       </td>
                     </tr>
                   ))}
+                  {medicalRecords.length === 0 && (
+                    <tr>
+                      <td colSpan="4" style={{ textAlign: "center" }}>
+                        Belum ada riwayat kunjungan.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -456,6 +641,25 @@ function Beranda() {
               </div>
 
               <div className="pasien-modal-field">
+                <label>Nomor BPJS (opsional)</label>
+                <input
+                  type="text"
+                  value={modalData.bpjs_number}
+                  onChange={(e) => setModalData({ ...modalData, bpjs_number: e.target.value })}
+                />
+              </div>
+
+              <div className="pasien-modal-field">
+                <label>Tempat Lahir</label>
+                <input
+                  type="text"
+                  value={modalData.place_of_birth}
+                  onChange={(e) => setModalData({ ...modalData, place_of_birth: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="pasien-modal-field">
                 <label>Tanggal Lahir</label>
                 <input
                   type="date"
@@ -470,9 +674,11 @@ function Beranda() {
                 <select
                   value={modalData.gender}
                   onChange={(e) => setModalData({ ...modalData, gender: e.target.value })}
+                  required
                 >
-                  <option value="Laki-laki">Laki-laki</option>
-                  <option value="Perempuan">Perempuan</option>
+                  <option value="">Pilih jenis kelamin</option>
+                  <option value="L">Laki-laki</option>
+                  <option value="P">Perempuan</option>
                 </select>
               </div>
 
@@ -481,12 +687,91 @@ function Beranda() {
                 <select
                   value={modalData.blood_type}
                   onChange={(e) => setModalData({ ...modalData, blood_type: e.target.value })}
+                  required
                 >
+                  <option value="">Pilih golongan darah</option>
                   <option value="A">A</option>
                   <option value="B">B</option>
                   <option value="AB">AB</option>
                   <option value="O">O</option>
                 </select>
+              </div>
+
+              <div className="pasien-modal-field">
+                <label>Rhesus (opsional)</label>
+                <select
+                  value={modalData.rhesus}
+                  onChange={(e) => setModalData({ ...modalData, rhesus: e.target.value })}
+                >
+                  <option value="">Pilih rhesus</option>
+                  <option value="+">Positif (+)</option>
+                  <option value="-">Negatif (-)</option>
+                </select>
+              </div>
+
+              <div className="pasien-modal-field">
+                <label>Status Pernikahan (opsional)</label>
+                <input
+                  type="text"
+                  value={modalData.marital_status}
+                  onChange={(e) => setModalData({ ...modalData, marital_status: e.target.value })}
+                />
+              </div>
+
+              <div className="pasien-modal-field">
+                <label>Pekerjaan (opsional)</label>
+                <input
+                  type="text"
+                  value={modalData.occupation}
+                  onChange={(e) => setModalData({ ...modalData, occupation: e.target.value })}
+                />
+              </div>
+
+              <div className="pasien-modal-field">
+                <label>Alergi (pisahkan dengan koma, opsional)</label>
+                <input
+                  type="text"
+                  value={modalData.allergies}
+                  onChange={(e) => setModalData({ ...modalData, allergies: e.target.value })}
+                />
+              </div>
+
+              <div className="pasien-modal-field">
+                <label>Penyakit Kronis (pisahkan dengan koma, opsional)</label>
+                <input
+                  type="text"
+                  value={modalData.chronic_diseases}
+                  onChange={(e) => setModalData({ ...modalData, chronic_diseases: e.target.value })}
+                />
+              </div>
+
+              <div className="pasien-modal-field">
+                <label>Nama Kontak Darurat</label>
+                <input
+                  type="text"
+                  value={modalData.emergency_contact_name}
+                  onChange={(e) => setModalData({ ...modalData, emergency_contact_name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="pasien-modal-field">
+                <label>Telepon Kontak Darurat</label>
+                <input
+                  type="tel"
+                  value={modalData.emergency_contact_phone}
+                  onChange={(e) => setModalData({ ...modalData, emergency_contact_phone: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="pasien-modal-field">
+                <label>Hubungan Kontak Darurat (opsional)</label>
+                <input
+                  type="text"
+                  value={modalData.emergency_contact_relation}
+                  onChange={(e) => setModalData({ ...modalData, emergency_contact_relation: e.target.value })}
+                />
               </div>
 
               <div className="pasien-modal-actions">
@@ -497,8 +782,12 @@ function Beranda() {
                 >
                   Batal
                 </button>
-                <button type="submit" className="pasien-modal-btn-save">
-                  Simpan Profil
+                <button
+                  type="submit"
+                  className="pasien-modal-btn-save"
+                  disabled={savingProfile}
+                >
+                  {savingProfile ? "Menyimpan..." : "Simpan Profil"}
                 </button>
               </div>
             </form>

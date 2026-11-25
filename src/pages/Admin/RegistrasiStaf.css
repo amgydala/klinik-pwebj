@@ -1,0 +1,69 @@
+.staff-registration-alert {
+  padding: 14px 16px;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  color: #9a3412;
+  background: #fff7ed;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.staff-registration-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.staff-registration-card h2 {
+  margin: 12px 0 8px;
+  color: #1e293b;
+  font-size: 16px;
+}
+
+.staff-registration-card p {
+  min-height: 72px;
+  margin: 0 0 14px;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.staff-registration-card code {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  color: #334155;
+  font-size: 12px;
+}
+
+.staff-registration-badge {
+  display: inline-flex;
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #0f766e;
+  background: #f0fdfa;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .staff-registration-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .staff-registration-card p {
+    min-height: 0;
+  }
+}
+
+.staff-registration-success {
+  padding: 14px 16px;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  color: #166534;
+  background: #f0fdf4;
+  font-size: 13px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}

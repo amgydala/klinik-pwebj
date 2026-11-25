@@ -1,90 +1,100 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
-import { apotekerMenu, apotekerNama, dataTransaksi } from "../../data/mockData";
+import { apotekerMenu } from "../../data/mockData";
+import { getCurrentUser, getPharmacistBillings } from "../../data/authService";
 import "./RiwayatTransaksi.css";
 
+const getId = (billing) => billing.id || billing._id;
+const money = (value) => `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
+
 function RiwayatTransaksi() {
-  const [searchTerm, setSearchTerm] = useState("");
+  const user = getCurrentUser();
+  const [billings, setBillings] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const filteredData = dataTransaksi.filter((row) =>
-    row.obat.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    getPharmacistBillings()
+      .then(setBillings)
+      .catch((requestError) => setError(requestError.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = useMemo(
+    () => billings.filter((billing) =>
+      `${getId(billing)} ${billing.appointment_id || ""}`
+        .toLowerCase()
+        .includes(search.toLowerCase())
+    ),
+    [billings, search]
   );
-
-  const totalPendapatan = dataTransaksi
-    .filter((d) => d.penjamin === "Umum")
-    .reduce((sum, d) => sum + d.total, 0);
-
-  const jumlahBPJS = dataTransaksi.filter((d) => d.penjamin === "BPJS").length;
+  const paid = billings.filter(
+    (billing) => String(billing.payment_status).toLowerCase() === "paid"
+  );
+  const revenue = paid.reduce((total, billing) => total + Number(billing.total_amount || 0), 0);
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div style={{ display: "flex", height: "100dvh" }}>
       <Sidebar menuItems={apotekerMenu} />
-      <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header 
-        userName={apotekerNama}
-        searchValue={searchTerm}
-        onSearchChange={setSearchTerm} 
+      <div style={{ flex: 1, height: "100dvh", minWidth: 0, overflowY: "auto" }}>
+        <Header
+          userName={user?.name || "Apoteker"}
+          searchValue={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Cari ID tagihan atau janji temu..."
         />
         <div className="page-content">
           <div className="stat-cards">
             <div className="stat-card border-accent">
-              <div className="stat-label">Total Transaksi</div>
-              <div className="stat-value">{dataTransaksi.length}</div>
+              <div className="stat-label">Total tagihan</div>
+              <div className="stat-value">{billings.length}</div>
             </div>
             <div className="stat-card border-success">
-              <div className="stat-label">Pendapatan (Umum)</div>
-              <div className="stat-value">Rp {totalPendapatan.toLocaleString("id-ID")}</div>
+              <div className="stat-label">Tagihan lunas</div>
+              <div className="stat-value">{paid.length}</div>
             </div>
             <div className="stat-card border-info">
-              <div className="stat-label">Klaim BPJS</div>
-              <div className="stat-value">{jumlahBPJS}</div>
+              <div className="stat-label">Total nilai lunas</div>
+              <div className="stat-value">{money(revenue)}</div>
             </div>
           </div>
-
+          {error && <div role="alert" className="empty-state">{error}</div>}
           <div className="table-card">
-            <div className="table-header-row">
-              <div className="table-title">Riwayat Transaksi</div>
-            </div>
-
+            <div className="table-header-row"><div className="table-title">Riwayat Tagihan Farmasi</div></div>
             <table>
               <thead>
                 <tr>
                   <th>Tanggal</th>
-                  <th>Nama Obat</th>
-                  <th>Jumlah Keluar</th>
-                  <th>No. Resep</th>
-                  <th>Pasien</th>
+                  <th>ID Tagihan</th>
+                  <th>ID Janji Temu</th>
                   <th>Penjamin</th>
-                  <th>Total Dibayar</th>
-                  <th>Status Bayar</th>
+                  <th>Biaya Obat</th>
+                  <th>Total</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredData.map((row) => (
-                  <tr key={row.noResep}>
-                    <td>{row.tanggal}</td>
-                    <td>{row.obat}</td>
-                    <td>{row.jumlah}</td>
-                    <td>{row.noResep}</td>
-                    <td>{row.pasien}</td>
-                    <td>{row.penjamin}</td>
-                    <td>
-                      {row.penjamin === "BPJS" ? "-" : `Rp ${row.total.toLocaleString("id-ID")}`}
-                    </td>
-                    <td>
-                      <Badge
-                        text={row.statusBayar}
-                        variant={row.statusBayar === "Lunas" ? "success" : "info"}
-                      />
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map((billing) => {
+                  const status = billing.payment_status || "unknown";
+                  return (
+                    <tr key={getId(billing)}>
+                      <td>{billing.created_at ? new Date(billing.created_at).toLocaleDateString("id-ID") : "-"}</td>
+                      <td>{getId(billing)}</td>
+                      <td>{billing.appointment_id || "-"}</td>
+                      <td>{billing.guarantor || "-"}</td>
+                      <td>{money(billing.medicine_fee)}</td>
+                      <td>{money(billing.total_amount)}</td>
+                      <td><Badge text={status} variant={status === "paid" ? "success" : "warning"} /></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
-
-            {filteredData.length === 0 && (
+            {loading && <div className="empty-state">Memuat riwayat...</div>}
+            {!loading && filtered.length === 0 && (
               <div className="empty-state">Tidak ada transaksi yang cocok dengan pencarian.</div>
             )}
           </div>

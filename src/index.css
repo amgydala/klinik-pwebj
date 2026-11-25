@@ -2,7 +2,12 @@ html, body, #root {
   margin: 0;
   padding: 0;
   height: 100%;
+  min-height: 100%;
   overflow: hidden;
+}
+
+html {
+  min-height: 100dvh;
 }
 
 body {
@@ -14,7 +19,161 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+#root {
+  min-height: 100dvh;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.sidebar + div,
+.sidebar ~ .apoteker-main-content,
+.sidebar ~ .admin-main-content {
+  flex: 1 1 0%;
+  min-width: 0;
+  width: 0;
+}
+
+.patient-layout,
+.apoteker-layout,
+.admin-layout {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.patient-main-content,
+.apoteker-main-content,
+.admin-main-content {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.page-content,
+.pasien-content,
+.tagihan-content,
+.rekam-content,
+.jadwal-content,
+.antrian-content,
+.soap-content,
+.dokter-content,
+.apoteker-content,
+.admin-content {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+}
+
+.form-card,
+.pasien-card {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+
+.table-card,
+.antrian-card,
+.jadwal-card,
+.rekam-card,
+.tagihan-card,
+.pasien-visit-card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.table-card,
+.antrian-card,
+.jadwal-card,
+.rekam-card {
+  overflow-x: auto;
+}
+
+img,
+svg,
+video {
+  max-width: 100%;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+@media (max-width: 900px) {
+    .patient-layout,
+    .apoteker-layout,
+    .admin-layout {
+      width: 100%;
+      height: 100dvh;
+    }
+}
+
+@media (max-width: 640px) {
+    #root .page-content,
+    #root .pasien-content,
+    #root .tagihan-content,
+    #root .rekam-content,
+    #root .jadwal-content,
+    #root .antrian-content,
+    #root .soap-content,
+    #root .dokter-content,
+    #root .apoteker-content,
+    #root .admin-content {
+      padding-left: 14px;
+      padding-right: 14px;
+    }
+
+    #root .form-row,
+    #root .pasien-form-row,
+    #root .info-grid,
+    #root .summary-cards {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 10px;
+    }
+
+    #root .soap-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    #root .antrian-card-head,
+    #root .rekam-card-head,
+    #root .pasien-page-head,
+    #root .tagihan-page-head {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    #root .antrian-filter,
+    #root .rekam-filter {
+      flex-wrap: wrap;
+    }
+
+    #root .antrian-filter select,
+    #root .antrian-filter input,
+    #root .rekam-filter input {
+      min-width: 0;
+      flex: 1 1 140px;
+    }
+
+    #root .action-row,
+    #root .jadwal-action-row,
+    #root .admin-panel-heading {
+      flex-wrap: wrap;
+    }
+
+    #root .action-row > *,
+    #root .jadwal-action-row > *,
+    #root .admin-panel-heading > * {
+      max-width: 100%;
+    }
+
+    #root .table-card,
+    #root .antrian-card,
+    #root .jadwal-card,
+    #root .rekam-card {
+      padding: 14px;
+    }
 }

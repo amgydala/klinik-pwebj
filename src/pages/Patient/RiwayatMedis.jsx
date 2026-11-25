@@ -1,18 +1,93 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
-import {
-  patientNama,
-  patientMenu,
-  riwayatMedisPasien as riwayatMedis,
-} from "../../data/mockData";
-import { getCurrentUser } from "../../data/authService";
+import { patientMenu } from "../../data/mockData";
+import { getCurrentUser, getPatientMedicalRecords } from "../../data/authService";
 import "./RiwayatMedis.css";
+
+const formatDate = (value) => {
+  if (!value) return "Tanggal tidak tersedia";
+  const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? String(value)
+    : date.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+};
+
+const normalizeRecord = (record, index) => {
+  const appointment = record.appointment || {};
+  const doctor = record.doctor || appointment.doctor || {};
+  const prescriptions = record.prescriptions || record.prescription || [];
+  return {
+    ...record,
+    id: record.id || record._id || `medical-record-${index}`,
+    tanggal: formatDate(
+      record.date ||
+        record.created_at ||
+        appointment.date ||
+        appointment.appointment_date
+    ),
+    dokter:
+      doctor.name ||
+      doctor.user?.name ||
+      record.doctor_name ||
+      appointment.doctor_name ||
+      "Dokter tidak tersedia",
+    diagnosaUtama:
+      record.assessment || record.diagnosis || record.diagnosis_name || "Belum dicatat",
+    soap: {
+      subjective: record.subjective || record.soap?.subjective || "—",
+      objective: record.objective || record.soap?.objective || "—",
+      assessment: record.assessment || record.soap?.assessment || "—",
+      plan: record.plan || record.soap?.plan || "—",
+    },
+    resep: Array.isArray(prescriptions)
+      ? prescriptions.map((prescription, prescriptionIndex) => ({
+          id: prescription.id || prescription._id || prescriptionIndex,
+          nama:
+            prescription.medicine?.name ||
+            prescription.medicine_name ||
+            prescription.name ||
+            "Obat",
+          jumlah: prescription.quantity ?? prescription.amount ?? "—",
+          aturan:
+            prescription.instructions ||
+            prescription.usage ||
+            prescription.dosage ||
+            "Ikuti petunjuk dokter",
+        }))
+      : [],
+  };
+};
 
 function RiwayatMedis() {
   const currentUser = getCurrentUser();
-  const displayName = currentUser?.name || patientNama;
+  const displayName = currentUser?.name || "Pasien";
   const [selectedItem, setSelectedItem] = useState(null);
+  const [records, setRecords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    getPatientMedicalRecords(currentUser.id)
+      .then((result) => {
+        if (active) setRecords(result.map(normalizeRecord));
+      })
+      .catch((error) => {
+        if (active) setErrorMessage(error.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [currentUser.id]);
 
   return (
     <div className="patient-layout">
@@ -32,11 +107,19 @@ function RiwayatMedis() {
             </button>
           </div>
 
-          {riwayatMedis.length === 0 && (
+          {errorMessage && (
+            <div className="auth-alert auth-alert-error" role="alert">
+              {errorMessage}
+            </div>
+          )}
+
+          {loading && <div className="pasien-empty">Memuat riwayat medis...</div>}
+
+          {!loading && !errorMessage && records.length === 0 && (
             <div className="pasien-empty">Belum ada riwayat medis.</div>
           )}
 
-          {riwayatMedis.map((item) => (
+          {records.map((item) => (
             <div className="pasien-visit-card" key={item.id}>
               <div className="pasien-visit-head">
                 <div className="pasien-visit-icon">+</div>
@@ -85,7 +168,7 @@ function RiwayatMedis() {
                   </thead>
                   <tbody>
                     {item.resep.map((r) => (
-                      <tr key={r.nama}>
+                      <tr key={r.id}>
                         <td>{r.nama}</td>
                         <td>{r.jumlah}</td>
                         <td>{r.aturan}</td>

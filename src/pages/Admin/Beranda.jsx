@@ -1,371 +1,417 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
-import { adminDashboardData, adminMenu, adminNama, dataTransaksi, rekamMedisDokterAwal } from "../../data/mockData";
+import Badge from "../../components/Badge";
+import { adminMenu } from "../../data/mockData";
+import {
+  createDoctorSchedule,
+  deactivateDoctorSchedule,
+  deleteMedicine,
+  getAdminBillings,
+  getBillingDetails,
+  getCurrentUser,
+  getDoctorAppointments,
+  getDoctorSchedules,
+  getMedicalRecordAuditLogs,
+  getMedicines,
+  getMedicineDetails,
+  getPatientMedicalRecords,
+  updateBillingPayment,
+  updateDoctorSchedule,
+} from "../../data/authService";
 import "./Beranda.css";
 
-const monthNumbers = {
-  Jan: "01",
-  Feb: "02",
-  Mar: "03",
-  Apr: "04",
-  Mei: "05",
-  Jun: "06",
-  Jul: "07",
-  Agu: "08",
-  Sep: "09",
-  Okt: "10",
-  Nov: "11",
-  Des: "12",
+const today = () => {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 };
+const getId = (row) => row?.id || row?._id || row || "";
+const money = (value) => `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
 
-const monthLabels = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
-const reportMonths = ["2026-07", "2026-08", "2026-09", "2026-10"];
-
-const getTransactionMonth = (tanggal) => {
-  const [, shortMonth, year] = tanggal.split(" ");
-  return `${year}-${monthNumbers[shortMonth]}`;
-};
-
-const getMonthLabel = (month) => {
-  const [year, monthNumber] = month.split("-");
-  return `${monthLabels[Number(monthNumber) - 1]} ${year}`;
-};
-
-const formatTanggalAudit = (tanggal) =>
-  new Intl.DateTimeFormat("id-ID", {
-    day: "2-digit",
-    month: "short",
-    timeZone: "UTC",
-  }).format(new Date(`${tanggal}T00:00:00Z`));
-
-const formatRupiah = (nilai) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    maximumFractionDigits: 0,
-  }).format(nilai);
-
-function StatIcon({ type }) {
-  const iconPaths = {
-    sales: (
-      <>
-        <path d="M3 17 9 11l4 4 8-9" />
-        <path d="M15 6h6v6" />
-      </>
-    ),
-    medicine: (
-      <>
-        <path d="m10.5 20.5 10-10a5.66 5.66 0 0 0-8-8l-10 10a5.66 5.66 0 0 0 8 8Z" />
-        <path d="m8.5 8.5 7 7" />
-      </>
-    ),
-    patient: (
-      <>
-        <circle cx="9" cy="8" r="3" />
-        <path d="M3 20v-1a6 6 0 0 1 12 0v1M19 8v6M16 11h6" />
-      </>
-    ),
-    audit: (
-      <>
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-        <path d="M14 2v6h6M8 13h8M8 17h8" />
-      </>
-    ),
-  };
-
+function Panel({ title, description, children }) {
   return (
-    <span className={`admin-stat-icon admin-stat-icon-${type}`} aria-hidden="true">
-      <svg
-        width="21"
-        height="21"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {iconPaths[type]}
-      </svg>
-    </span>
+    <section className="admin-panel">
+      <div className="admin-panel-heading">
+        <div><h2>{title}</h2><p>{description}</p></div>
+      </div>
+      {children}
+    </section>
   );
 }
 
 function Beranda() {
-  const [selectedMonth, setSelectedMonth] = useState("2026-09");
-  const { auditLog } = adminDashboardData;
-
-  const transactionsByMonth = reportMonths.map((month) => {
-    const transactions = dataTransaksi.filter(
-      (transaction) => getTransactionMonth(transaction.tanggal) === month
-    );
-    return {
-      month,
-      revenue: transactions
-        .filter((transaction) => transaction.statusBayar === "Lunas")
-        .reduce((total, transaction) => total + transaction.total, 0),
-    };
+  const user = getCurrentUser();
+  const [appointments, setAppointments] = useState([]);
+  const [patientId, setPatientId] = useState("");
+  const [patientRecords, setPatientRecords] = useState([]);
+  const [billings, setBillings] = useState([]);
+  const [medicines, setMedicines] = useState([]);
+  const [auditPage, setAuditPage] = useState(null);
+  const [auditPageNumber, setAuditPageNumber] = useState(1);
+  const [errors, setErrors] = useState([]);
+  const [message, setMessage] = useState("");
+  const [selectedMedicine, setSelectedMedicine] = useState(null);
+  const [selectedBilling, setSelectedBilling] = useState(null);
+  const [doctorId, setDoctorId] = useState("");
+  const [schedules, setSchedules] = useState([]);
+  const [schedule, setSchedule] = useState({
+    schedule_date: "",
+    start_time: "",
+    end_time: "",
+    quota: "",
   });
+  const [editingScheduleId, setEditingScheduleId] = useState("");
 
-  const visitsByMonth = reportMonths.map((month) => ({
-    month,
-    count: rekamMedisDokterAwal.filter(
-      (record) => record.tanggal.slice(0, 7) === month
-    ).length,
-  }));
-
-  const monthTransactions = dataTransaksi.filter(
-    (transaction) => getTransactionMonth(transaction.tanggal) === selectedMonth
-  );
-  const monthVisits = rekamMedisDokterAwal.filter(
-    (record) => record.tanggal.slice(0, 7) === selectedMonth
-  );
-  const monthAuditLog = auditLog.filter(
-    (entry) => entry.tanggal.slice(0, 7) === selectedMonth
-  );
-  const monthRevenue = monthTransactions
-    .filter((transaction) => transaction.statusBayar === "Lunas")
-    .reduce((total, transaction) => total + transaction.total, 0);
-  const medicineUnits = monthTransactions.reduce(
-    (total, transaction) => total + Number.parseInt(transaction.jumlah, 10),
-    0
-  );
-  const medicineSales = monthTransactions.reduce((sales, transaction) => {
-    const existing = sales.find((item) => item.nama === transaction.obat);
-    if (existing) {
-      existing.jumlah += Number.parseInt(transaction.jumlah, 10);
-      existing.transaksi += 1;
-    } else {
-      sales.push({
-        nama: transaction.obat,
-        jumlah: Number.parseInt(transaction.jumlah, 10),
-        transaksi: 1,
-      });
+  const loadAudit = useCallback(async () => {
+    try {
+      setAuditPage(await getMedicalRecordAuditLogs(auditPageNumber));
+    } catch (error) {
+      setErrors((current) => [...current, `Audit log: ${error.message}`]);
     }
-    return sales;
-  }, []).sort((first, second) => second.jumlah - first.jumlah);
+  }, [auditPageNumber]);
 
-  const stats = [
-    {
-      type: "sales",
-      label: "Penjualan obat",
-      value: formatRupiah(monthRevenue),
-      caption: getMonthLabel(selectedMonth),
-    },
-    {
-      type: "medicine",
-      label: "Obat terjual",
-      value: medicineUnits,
-      caption: "Unit pada transaksi bulan ini",
-    },
-    {
-      type: "patient",
-      label: "Kunjungan pasien",
-      value: monthVisits.length,
-      caption: "Rekam medis bulan ini",
-    },
-    {
-      type: "audit",
-      label: "Aktivitas audit",
-      value: monthAuditLog.length,
-      caption: "Catatan akses / perubahan",
-    },
-  ];
+  const loadResources = useCallback(async () => {
+    setErrors([]);
+    const results = await Promise.allSettled([
+      getDoctorAppointments({ date: today() }),
+      getAdminBillings(),
+      getMedicines(),
+    ]);
+    const messages = [];
+    if (results[0].status === "fulfilled") setAppointments(results[0].value);
+    else messages.push(`Antrean: ${results[0].reason.message}`);
+    if (results[1].status === "fulfilled") setBillings(results[1].value);
+    else messages.push(`Tagihan: ${results[1].reason.message}`);
+    if (results[2].status === "fulfilled") setMedicines(results[2].value);
+    else messages.push(`Inventaris obat: ${results[2].reason.message}`);
+    setErrors(messages);
+  }, []);
 
-  const maxRevenue = Math.max(...transactionsByMonth.map((item) => item.revenue), 1);
-  const maxVisits = Math.max(...visitsByMonth.map((item) => item.count), 1);
+  useEffect(() => {
+    loadResources();
+  }, [loadResources]);
+
+  useEffect(() => {
+    loadAudit();
+  }, [loadAudit]);
+
+  const loadSchedules = async (id = doctorId) => {
+    if (!id.trim()) {
+      setErrors((current) => [...current, "Masukkan ID profil dokter untuk mencari jadwal."]);
+      return;
+    }
+    try {
+      setSchedules(await getDoctorSchedules(id.trim()));
+      setDoctorId(id.trim());
+    } catch (error) {
+      setErrors((current) => [...current, `Jadwal: ${error.message}`]);
+    }
+  };
+
+  const saveSchedule = async (event) => {
+    event.preventDefault();
+    setErrors([]);
+    try {
+      const updating = Boolean(editingScheduleId);
+      if (updating) {
+        await updateDoctorSchedule(editingScheduleId, {
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+          quota: Number(schedule.quota),
+        });
+      } else {
+        await createDoctorSchedule({
+          doctor_id: doctorId.trim(),
+          schedule_date: schedule.schedule_date,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+          quota: Number(schedule.quota),
+        });
+      }
+      setEditingScheduleId("");
+      setSchedule({ schedule_date: "", start_time: "", end_time: "", quota: "" });
+      setMessage(updating ? "Jadwal diperbarui." : "Jadwal dibuat.");
+      await loadSchedules();
+    } catch (error) {
+      setErrors([`Simpan jadwal: ${error.message}`]);
+    }
+  };
+
+  const disableSchedule = async (item) => {
+    if (!window.confirm(`Nonaktifkan jadwal ${item.schedule_date}?`)) return;
+    try {
+      await deactivateDoctorSchedule(getId(item));
+      setMessage("Jadwal dinonaktifkan.");
+      await loadSchedules();
+    } catch (error) {
+      setErrors([`Nonaktifkan jadwal: ${error.message}`]);
+    }
+  };
+
+  const removeMedicine = async (medicine) => {
+    if (!window.confirm(`Hapus ${medicine.name} dari inventaris?`)) return;
+    try {
+      await deleteMedicine(getId(medicine));
+      setMedicines((current) => current.filter((item) => getId(item) !== getId(medicine)));
+      setMessage("Obat berhasil dihapus.");
+    } catch (error) {
+      setErrors([`Hapus obat: ${error.message}`]);
+    }
+  };
+
+  const showMedicine = async (medicine) => {
+    try {
+      const details = await getMedicineDetails(getId(medicine));
+      setSelectedMedicine(details.medicine || details);
+    } catch (error) {
+      setErrors([`Detail obat: ${error.message}`]);
+    }
+  };
+
+  const showBilling = async (billing) => {
+    try {
+      const details = await getBillingDetails(getId(billing));
+      setSelectedBilling(details.billing || details);
+    } catch (error) {
+      setErrors([`Detail tagihan: ${error.message}`]);
+    }
+  };
+
+  const searchPatientRecords = async (event) => {
+    event.preventDefault();
+    try {
+      setPatientRecords(await getPatientMedicalRecords(patientId.trim()));
+    } catch (error) {
+      setErrors([`Riwayat medis: ${error.message}`]);
+    }
+  };
+
+  const markPaid = async () => {
+    if (!selectedBilling || selectedBilling.payment_status !== "unpaid") return;
+    if (!window.confirm("Catat pembayaran tunai dan jalankan pemotongan FEFO?")) return;
+    try {
+      await updateBillingPayment(getId(selectedBilling), "cash");
+      setSelectedBilling(null);
+      setMessage("Pembayaran berhasil dicatat.");
+      await loadResources();
+    } catch (error) {
+      setErrors([`Pembayaran: ${error.message}`]);
+    }
+  };
+
+  const auditLogs = Array.isArray(auditPage?.data) ? auditPage.data : [];
+  const auditPagination = auditPage?.data && !Array.isArray(auditPage.data)
+    ? auditPage.data
+    : auditPage;
 
   return (
     <div className="admin-layout">
       <Sidebar menuItems={adminMenu} />
       <div className="admin-main-content">
-        <Header userName={adminNama} />
+        <Header userName={user?.name || "Administrator"} />
         <main className="admin-content">
-          <section className="admin-welcome">
+          <div className="admin-welcome">
             <div>
-              <span className="admin-eyebrow">Laporan manajemen</span>
-              <h1>Dashboard Admin</h1>
-              <p>
-                Pantau penjualan obat, kunjungan pasien bulanan, dan audit
-                rekam medis.
-              </p>
+              <span className="admin-eyebrow">Administrasi SIMRS</span>
+              <h1>Audit & Pemeliharaan</h1>
+              <p>Data langsung dari API; operasi yang mengubah data meminta konfirmasi.</p>
             </div>
-            <label className="admin-month-picker">
-              <span>Periode laporan</span>
-              <select
-                value={selectedMonth}
-                onChange={(event) => setSelectedMonth(event.target.value)}
-              >
-                {reportMonths.map((month) => (
-                  <option key={month} value={month}>{getMonthLabel(month)}</option>
-                ))}
-              </select>
-            </label>
-          </section>
+          </div>
+          {errors.map((error, index) => (
+            <div key={`${index}-${error}`} role="alert" className="admin-panel" style={{ color: "#b42318", marginBottom: 10 }}>
+              {error}
+            </div>
+          ))}
+          {message && <div role="status" className="admin-panel" style={{ marginBottom: 10 }}>{message}</div>}
 
-          <section className="admin-stats" aria-label="Ringkasan bulanan">
-            {stats.map((stat) => (
-              <article className="admin-stat-card" key={stat.type}>
-                <StatIcon type={stat.type} />
-                <div className="admin-stat-copy">
-                  <span>{stat.label}</span>
-                  <strong>{stat.value}</strong>
-                  <small>{stat.caption}</small>
-                </div>
-              </article>
-            ))}
-          </section>
+          <div className="admin-stats">
+            <div className="admin-stat-card"><div className="admin-stat-copy"><span>Antrean hari ini</span><strong>{appointments.length}</strong></div></div>
+            <div className="admin-stat-card"><div className="admin-stat-copy"><span>Total tagihan</span><strong>{billings.length}</strong></div></div>
+            <div className="admin-stat-card"><div className="admin-stat-copy"><span>Jenis obat</span><strong>{medicines.length}</strong></div></div>
+            <div className="admin-stat-card"><div className="admin-stat-copy"><span>Audit log pada halaman</span><strong>{auditLogs.length}</strong></div></div>
+          </div>
 
-          <section className="admin-report-grid">
-            <article className="admin-panel" id="penjualan">
-              <div className="admin-panel-heading">
-                <div>
-                  <h2>Tren penjualan obat</h2>
-                  <p>Nilai transaksi lunas per bulan.</p>
-                </div>
-                <span className="admin-report-period">Jul–Okt 2026</span>
+          <Panel title="Audit rekam medis" description="Log akses dan pembuatan rekam medis dari endpoint admin.">
+            <div className="admin-audit-table-wrap">
+              <table className="admin-audit-table">
+                <thead><tr><th>Waktu</th><th>Pengguna</th><th>Role</th><th>Aksi</th><th>IP</th></tr></thead>
+                <tbody>
+                  {auditLogs.map((log) => (
+                    <tr key={getId(log)}>
+                      <td>{log.accessed_at ? new Date(log.accessed_at).toLocaleString("id-ID") : "-"}</td>
+                      <td>{log.user_name || log.user_id || "-"}</td>
+                      <td>{log.user_role || "-"}</td>
+                      <td>{log.action || "-"}</td>
+                      <td>{log.ip_address || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="admin-panel-heading" style={{ marginTop: 12 }}>
+              <span>Halaman {auditPagination?.current_page || auditPageNumber} dari {auditPagination?.last_page || 1}</span>
+              <div>
+                <button disabled={auditPageNumber <= 1} onClick={() => setAuditPageNumber((page) => page - 1)}>Sebelumnya</button>{" "}
+                <button disabled={auditPageNumber >= (auditPagination?.last_page || 1)} onClick={() => setAuditPageNumber((page) => page + 1)}>Berikutnya</button>
               </div>
-              <div className="admin-chart" role="img" aria-label="Grafik penjualan obat per bulan">
-                {transactionsByMonth.map((item) => (
-                  <div className="admin-chart-column" key={item.month}>
-                    <strong>{formatRupiah(item.revenue)}</strong>
-                    <div className="admin-chart-track">
-                      <span
-                        className={item.month === selectedMonth ? "admin-chart-bar admin-chart-bar-selected" : "admin-chart-bar"}
-                        style={{ height: `${Math.max((item.revenue / maxRevenue) * 100, item.revenue ? 8 : 0)}%` }}
-                        title={`${getMonthLabel(item.month)}: ${formatRupiah(item.revenue)}`}
-                      />
-                    </div>
-                    <span className="admin-chart-label">{getMonthLabel(item.month).split(" ")[0]}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="admin-chart-footnote">
-                Transaksi BPJS dicatat sebagai ditanggung dan tidak dihitung
-                sebagai pendapatan tunai.
-              </div>
-            </article>
+            </div>
+          </Panel>
 
-            <article className="admin-panel" id="obat-terjual">
-              <div className="admin-panel-heading">
-                <div>
-                  <h2>Obat paling banyak terjual</h2>
-                  <p>{getMonthLabel(selectedMonth)} · berdasarkan unit transaksi.</p>
-                </div>
-              </div>
-              {medicineSales.length > 0 ? (
-                <div className="admin-medicine-list">
-                  {medicineSales.map((item) => {
-                    const maxMedicineUnits = medicineSales[0].jumlah;
-                    return (
-                      <div className="admin-medicine-item" key={item.nama}>
-                        <div className="admin-medicine-info">
-                          <strong>{item.nama}</strong>
-                          <span>{item.transaksi} transaksi</span>
-                        </div>
-                        <div className="admin-medicine-quantity">
-                          <strong>{item.jumlah}</strong>
-                          <span>unit</span>
-                        </div>
-                        <div className="admin-medicine-track">
-                          <span style={{ width: `${(item.jumlah / maxMedicineUnits) * 100}%` }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="admin-empty-state">
-                  Belum ada transaksi obat pada {getMonthLabel(selectedMonth)}.
-                </div>
+          <Panel title="Antrean hari ini" description="Data appointment yang tersedia untuk administrator.">
+            <div className="admin-audit-table-wrap">
+              <table className="admin-audit-table">
+                <thead><tr><th>Antrean</th><th>Tanggal</th><th>Pasien</th><th>Dokter</th><th>Status</th></tr></thead>
+                <tbody>
+                  {appointments.map((item) => (
+                    <tr key={getId(item)}>
+                      <td>{item.queue_number || "-"}</td>
+                      <td>{item.date || "-"}</td>
+                      <td>{item.patient?.name || item.patient_name || item.patient_id || "-"}</td>
+                      <td>{item.doctor?.name || item.doctor_name || item.doctor_id || "-"}</td>
+                      <td>{item.status || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Panel>
+
+          <Panel title="Riwayat medis pasien" description="Pencarian berdasarkan ID pasien melalui endpoint rekam medis yang diizinkan untuk admin.">
+            <form onSubmit={searchPatientRecords} className="admin-panel-heading">
+              <label>ID pasien <input value={patientId} onChange={(event) => setPatientId(event.target.value)} required /></label>
+              <button type="submit">Cari rekam medis</button>
+            </form>
+            <div className="admin-audit-table-wrap">
+              <table className="admin-audit-table">
+                <thead><tr><th>Tanggal</th><th>Assessment</th><th>Subjective</th><th>Plan</th></tr></thead>
+                <tbody>
+                  {patientRecords.map((record) => (
+                    <tr key={getId(record)}>
+                      <td>{record.created_at ? new Date(record.created_at).toLocaleString("id-ID") : "-"}</td>
+                      <td>{record.assessment || "-"}</td>
+                      <td>{record.subjective || "-"}</td>
+                      <td>{record.plan || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {patientRecords.length === 0 && <p>Belum ada data untuk ID pasien yang dicari.</p>}
+          </Panel>
+
+          <Panel title="Jadwal dokter" description="Cari jadwal berdasarkan ID profil dokter; administrator dapat membuat, mengubah, dan menonaktifkannya.">
+            <form onSubmit={(event) => { event.preventDefault(); loadSchedules(); }} className="admin-panel-heading">
+              <label>
+                ID profil dokter{" "}
+                <input value={doctorId} onChange={(event) => setDoctorId(event.target.value)} required />
+              </label>
+              <button type="submit">Muat jadwal</button>
+            </form>
+            <div className="admin-audit-table-wrap">
+              <table className="admin-audit-table">
+                <thead><tr><th>Tanggal</th><th>Jam</th><th>Kuota</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody>
+                  {schedules.map((item) => (
+                    <tr key={getId(item)}>
+                      <td>{item.schedule_date}</td>
+                      <td>{item.start_time} - {item.end_time}</td>
+                      <td>{item.quota}</td>
+                      <td><Badge text={item.is_active ? "Aktif" : "Nonaktif"} variant={item.is_active ? "success" : "warning"} /></td>
+                      <td>
+                        <button
+                          onClick={() => {
+                            setEditingScheduleId(getId(item));
+                            setSchedule({
+                              schedule_date: item.schedule_date || "",
+                              start_time: item.start_time || "",
+                              end_time: item.end_time || "",
+                              quota: String(item.quota || ""),
+                            });
+                          }}
+                          disabled={!item.is_active}
+                        >
+                          Ubah
+                        </button>{" "}
+                        {item.is_active && <button onClick={() => disableSchedule(item)}>Nonaktifkan</button>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <form onSubmit={saveSchedule} className="admin-panel-heading" style={{ marginTop: 16 }}>
+              {!editingScheduleId && (
+                <label>Tanggal <input type="date" value={schedule.schedule_date} onChange={(event) => setSchedule({ ...schedule, schedule_date: event.target.value })} required /></label>
               )}
-            </article>
-          </section>
+              <label>Mulai <input type="time" value={schedule.start_time} onChange={(event) => setSchedule({ ...schedule, start_time: event.target.value })} required /></label>
+              <label>Selesai <input type="time" value={schedule.end_time} onChange={(event) => setSchedule({ ...schedule, end_time: event.target.value })} required /></label>
+              <label>Kuota <input type="number" min="1" value={schedule.quota} onChange={(event) => setSchedule({ ...schedule, quota: event.target.value })} required /></label>
+              <button type="submit" disabled={!doctorId}>{editingScheduleId ? "Simpan jadwal" : "Buat jadwal"}</button>
+              {editingScheduleId && <button type="button" onClick={() => { setEditingScheduleId(""); setSchedule({ schedule_date: "", start_time: "", end_time: "", quota: "" }); }}>Batal</button>}
+            </form>
+          </Panel>
 
-          <section className="admin-report-grid">
-            <article className="admin-panel" id="kunjungan">
-              <div className="admin-panel-heading">
-                <div>
-                  <h2>Kunjungan pasien per bulan</h2>
-                  <p>Jumlah rekam medis selesai per periode.</p>
-                </div>
-                <span className="admin-report-period">Jul–Okt 2026</span>
-              </div>
-              <div className="admin-visit-chart" role="img" aria-label="Grafik kunjungan pasien per bulan">
-                {visitsByMonth.map((item) => (
-                  <div className="admin-visit-column" key={item.month}>
-                    <div className="admin-visit-count">{item.count}</div>
-                    <div className="admin-visit-track">
-                      <span
-                        className={item.month === selectedMonth ? "admin-visit-bar admin-visit-bar-selected" : "admin-visit-bar"}
-                        style={{ height: `${Math.max((item.count / maxVisits) * 100, item.count ? 8 : 0)}%` }}
-                        title={`${getMonthLabel(item.month)}: ${item.count} kunjungan`}
-                      />
-                    </div>
-                    <span className="admin-chart-label">{getMonthLabel(item.month).split(" ")[0]}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="admin-chart-footnote">
-                Kunjungan dihitung dari rekam medis, bukan antrean atau janji
-                temu yang belum selesai.
-              </div>
-            </article>
+          <Panel title="Inventaris obat" description="Detail obat dan penghapusan master obat (tindakan admin).">
+            <div className="admin-audit-table-wrap">
+              <table className="admin-audit-table">
+                <thead><tr><th>Nama</th><th>Kategori</th><th>Harga dasar</th><th>Jumlah batch</th><th>Aksi</th></tr></thead>
+                <tbody>
+                  {medicines.map((medicine) => (
+                    <tr key={getId(medicine)}>
+                      <td>{medicine.name}</td><td>{medicine.category || "-"}</td>
+                      <td>{money(medicine.base_price)}</td><td>{medicine.batches?.length || 0}</td>
+                      <td><button onClick={() => showMedicine(medicine)}>Detail</button>{" "}<button onClick={() => removeMedicine(medicine)}>Hapus</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Panel>
 
-            <article className="admin-panel" id="audit-rekam-medis">
-              <div className="admin-panel-heading">
-                <div>
-                  <h2>Audit rekam medis</h2>
-                  <p>Riwayat akses dan perubahan · {getMonthLabel(selectedMonth)}.</p>
-                </div>
-                <span className="admin-audit-lock" aria-label="Informasi privasi">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <rect x="4" y="10" width="16" height="11" rx="2" />
-                    <path d="M8 10V7a4 4 0 1 1 8 0v3M12 14v3" />
-                  </svg>
-                </span>
-              </div>
-              {monthAuditLog.length > 0 ? (
-                <div className="admin-audit-table-wrap">
-                  <table className="admin-audit-table">
-                    <thead>
-                      <tr>
-                        <th>Waktu</th>
-                        <th>Pengguna</th>
-                        <th>Aktivitas</th>
-                        <th>Pasien</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {monthAuditLog.map((entry) => (
-                        <tr key={entry.id}>
-                          <td>{formatTanggalAudit(entry.tanggal)} · {entry.waktu}</td>
-                          <td>{entry.pengguna}</td>
-                          <td>{entry.aktivitas}</td>
-                          <td>{entry.pasien}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="admin-empty-state">
-                  Tidak ada catatan audit pada {getMonthLabel(selectedMonth)}.
-                </div>
-              )}
-              <div className="admin-chart-footnote">
-                Audit mencatat siapa yang membuka atau mengubah rekam medis.
-              </div>
-            </article>
-          </section>
-
-          <p className="admin-disclaimer">
-            Data merupakan seed sintetis untuk demonstrasi frontend dan tidak
-            tersambung ke API atau database.
-          </p>
+          <Panel title="Tagihan" description="Daftar dan detail billing; administrator juga dapat mencatat pembayaran.">
+            <div className="admin-audit-table-wrap">
+              <table className="admin-audit-table">
+                <thead><tr><th>ID</th><th>Appointment</th><th>Jumlah</th><th>Status</th><th>Aksi</th></tr></thead>
+                <tbody>
+                  {billings.map((billing) => (
+                    <tr key={getId(billing)}>
+                      <td>{getId(billing)}</td><td>{billing.appointment_id || "-"}</td>
+                      <td>{money(billing.total_amount)}</td>
+                      <td>{billing.payment_status || "-"}</td>
+                      <td><button onClick={() => showBilling(billing)}>Detail</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Panel>
         </main>
       </div>
+
+      {selectedMedicine && (
+        <div className="modal-overlay" onClick={() => setSelectedMedicine(null)}>
+          <div className="modal-content" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header"><span className="modal-title">{selectedMedicine.name}</span><button className="modal-close" onClick={() => setSelectedMedicine(null)}>✕</button></div>
+            <p>{selectedMedicine.category} · {money(selectedMedicine.base_price)}</p>
+            <ul>{(selectedMedicine.batches || []).map((batch, index) => <li key={batch.batch_no || index}>{batch.batch_no}: {batch.stock} unit · exp {batch.exp_date}</li>)}</ul>
+          </div>
+        </div>
+      )}
+      {selectedBilling && (
+        <div className="modal-overlay" onClick={() => setSelectedBilling(null)}>
+          <div className="modal-content" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header"><span className="modal-title">Detail Tagihan</span><button className="modal-close" onClick={() => setSelectedBilling(null)}>✕</button></div>
+            <p>ID: {getId(selectedBilling)}</p>
+            <p>Appointment: {selectedBilling.appointment_id || "-"}</p>
+            <p>Jasa dokter: {money(selectedBilling.doctor_fee)}</p>
+            <p>Biaya obat: {money(selectedBilling.medicine_fee)}</p>
+            <p>Total: {money(selectedBilling.total_amount)}</p>
+            <p>Status: {selectedBilling.payment_status}</p>
+            <button onClick={() => setSelectedBilling(null)}>Tutup</button>{" "}
+            {selectedBilling.payment_status === "unpaid" && <button onClick={markPaid}>Tandai lunas (tunai)</button>}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

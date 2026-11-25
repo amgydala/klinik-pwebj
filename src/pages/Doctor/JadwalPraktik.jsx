@@ -1,200 +1,248 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
-import { doctorMenu, doctorNama, jadwalPraktikAwal } from "../../data/mockData";
+import { doctorMenu } from "../../data/mockData";
+import {
+  createDoctorSchedule,
+  deactivateDoctorSchedule,
+  getCurrentUser,
+  getDoctorSchedules,
+  updateDoctorSchedule,
+} from "../../data/authService";
 import "./JadwalPraktik.css";
 
+const emptyForm = {
+  schedule_date: "",
+  start_time: "",
+  end_time: "",
+  quota: "",
+};
+
+const getId = (schedule) => schedule.id || schedule._id;
+
 function JadwalPraktik() {
-  const [jadwal, setJadwal] = useState(jadwalPraktikAwal);
-  const [terpilihId, setTerpilihId] = useState(null);
-  const [modalDetail, setModalDetail] = useState(false);
-  const [modalAjukan, setModalAjukan] = useState(false);
+  const user = getCurrentUser();
+  const doctorId = user?.doctor_profile?.id || user?.doctor_profile?._id;
+  const [schedules, setSchedules] = useState([]);
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
-  // Form pengajuan
-  const [jamBaru, setJamBaru] = useState("");
-  const [kuotaBaru, setKuotaBaru] = useState("");
-  const [alasan, setAlasan] = useState("");
+  const loadSchedules = useCallback(async () => {
+    if (!doctorId) {
+      setError("Profil dokter tidak memiliki ID; silakan masuk kembali atau hubungi administrator.");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      setSchedules(await getDoctorSchedules(doctorId));
+      setError("");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [doctorId]);
 
-  const jadwalTerpilih = jadwal.find((j) => j.id === terpilihId);
+  useEffect(() => {
+    loadSchedules();
+  }, [loadSchedules]);
 
-  const bukaAjukan = () => {
-    setJamBaru(jadwalTerpilih.jam);
-    setKuotaBaru(jadwalTerpilih.kuota);
-    setAlasan("");
-    setModalAjukan(true);
+  const edit = (schedule) => {
+    setEditingId(getId(schedule));
+    setForm({
+      schedule_date: schedule.schedule_date || "",
+      start_time: schedule.start_time || "",
+      end_time: schedule.end_time || "",
+      quota: String(schedule.quota || ""),
+    });
+    setMessage("");
   };
 
-  const kirimPengajuan = (e) => {
-    e.preventDefault();
-    setJadwal((prev) =>
-      prev.map((j) =>
-        j.id === terpilihId
-          ? { ...j, pengajuan: { jamBaru, kuotaBaru: Number(kuotaBaru), alasan } }
-          : j
-      )
-    );
-    setModalAjukan(false);
+  const resetForm = () => {
+    setForm(emptyForm);
+    setEditingId("");
+    setMessage("");
+  };
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const updating = Boolean(editingId);
+      const payload = updating
+        ? {
+            start_time: form.start_time,
+            end_time: form.end_time,
+            quota: Number(form.quota),
+          }
+        : {
+            doctor_id: doctorId,
+            schedule_date: form.schedule_date,
+            start_time: form.start_time,
+            end_time: form.end_time,
+            quota: Number(form.quota),
+          };
+      if (updating) {
+        await updateDoctorSchedule(editingId, payload);
+      } else {
+        await createDoctorSchedule(payload);
+      }
+      resetForm();
+      setMessage(updating ? "Jadwal berhasil diperbarui." : "Jadwal berhasil dibuat.");
+      await loadSchedules();
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deactivate = async (schedule) => {
+    if (!window.confirm(`Nonaktifkan jadwal ${schedule.schedule_date}?`)) return;
+    setError("");
+    setMessage("");
+    try {
+      await deactivateDoctorSchedule(getId(schedule));
+      setMessage("Jadwal berhasil dinonaktifkan.");
+      await loadSchedules();
+    } catch (requestError) {
+      setError(requestError.message);
+    }
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div style={{ display: "flex", height: "100dvh" }}>
       <Sidebar menuItems={doctorMenu} />
-      <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName={doctorNama} />
+      <div style={{ flex: 1, height: "100dvh", minWidth: 0, overflowY: "auto" }}>
+        <Header userName={user?.name || "Dokter"} />
         <div className="jadwal-content">
           <h1 className="jadwal-title">Jadwal Praktik</h1>
           <p className="jadwal-subtitle">
-            Lihat jadwal praktik kamu. Perubahan jadwal harus diajukan dan disetujui admin.
+            Kelola sesi praktik yang terhubung dengan akun dokter Anda.
           </p>
+          {error && <div role="alert" className="jadwal-hint">{error}</div>}
+          {message && <div role="status" className="jadwal-hint">{message}</div>}
 
           <div className="jadwal-card">
-            <div className="jadwal-card-title">Jadwal Praktik</div>
+            <div className="jadwal-card-title">Jadwal Aktif</div>
             <table className="jadwal-table">
               <thead>
                 <tr>
-                  <th>Hari</th>
                   <th>Tanggal</th>
                   <th>Jam Praktik</th>
                   <th>Kuota Pasien</th>
-                  <th>Ruangan Poliklinik</th>
-                  <th>Keterangan (opsional)</th>
+                  <th>Status</th>
+                  <th>Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {jadwal.map((j) => (
-                  <tr
-                    key={j.id}
-                    className={j.id === terpilihId ? "jadwal-row-aktif" : ""}
-                    onClick={() => setTerpilihId(j.id)}
-                  >
-                    <td>{j.hari}</td>
-                    <td>{j.tanggal}</td>
-                    <td>{j.jam}</td>
-                    <td>{j.kuota}</td>
-                    <td>{j.ruangan}</td>
+                {schedules.map((schedule) => (
+                  <tr key={getId(schedule)}>
+                    <td>{schedule.schedule_date}</td>
+                    <td>{schedule.start_time} - {schedule.end_time}</td>
+                    <td>{schedule.quota}</td>
                     <td>
-                      {j.pengajuan ? (
-                        <Badge text="Menunggu persetujuan admin" variant="warning" />
-                      ) : (
-                        j.keterangan || "-"
+                      <Badge
+                        text={schedule.is_active ? "Aktif" : "Nonaktif"}
+                        variant={schedule.is_active ? "success" : "warning"}
+                      />
+                    </td>
+                    <td>
+                      <button
+                        className="jadwal-btn-utama"
+                        disabled={!schedule.is_active}
+                        onClick={() => edit(schedule)}
+                      >
+                        Ubah
+                      </button>{" "}
+                      {schedule.is_active && (
+                        <button
+                          className="jadwal-btn-batal"
+                          onClick={() => deactivate(schedule)}
+                        >
+                          Nonaktifkan
+                        </button>
                       )}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-
-            {!jadwalTerpilih && (
-              <div className="jadwal-hint">
-                Klik salah satu baris untuk memilih jadwal.
-              </div>
+            {!loading && schedules.length === 0 && (
+              <div className="jadwal-hint">Belum ada jadwal praktik aktif.</div>
             )}
+            {loading && <div className="jadwal-hint">Memuat jadwal...</div>}
+          </div>
 
-            <div className="jadwal-action-row">
-              <button
-                className="jadwal-btn-utama"
-                disabled={!jadwalTerpilih || jadwalTerpilih.pengajuan}
-                onClick={bukaAjukan}
-              >
-                Ajukan Perubahan Jadwal
-              </button>
-              <button
-                className="jadwal-btn-utama"
-                disabled={!jadwalTerpilih}
-                onClick={() => setModalDetail(true)}
-              >
-                Lihat Detail
-              </button>
+          <div className="jadwal-card" style={{ marginTop: 20 }}>
+            <div className="jadwal-card-title">
+              {editingId ? "Ubah Jadwal" : "Tambah Jadwal Praktik"}
             </div>
+            <form onSubmit={submit}>
+              <div className="jadwal-form-group">
+                <label htmlFor="schedule-date">Tanggal</label>
+                <input
+                  id="schedule-date"
+                  type="date"
+                  value={form.schedule_date}
+                  disabled={Boolean(editingId)}
+                  onChange={(event) => setForm({ ...form, schedule_date: event.target.value })}
+                  required
+                />
+              </div>
+              <div className="jadwal-form-group">
+                <label htmlFor="schedule-start">Mulai</label>
+                <input
+                  id="schedule-start"
+                  type="time"
+                  value={form.start_time}
+                  onChange={(event) => setForm({ ...form, start_time: event.target.value })}
+                  required
+                />
+              </div>
+              <div className="jadwal-form-group">
+                <label htmlFor="schedule-end">Selesai</label>
+                <input
+                  id="schedule-end"
+                  type="time"
+                  value={form.end_time}
+                  onChange={(event) => setForm({ ...form, end_time: event.target.value })}
+                  required
+                />
+              </div>
+              <div className="jadwal-form-group">
+                <label htmlFor="schedule-quota">Kuota pasien</label>
+                <input
+                  id="schedule-quota"
+                  type="number"
+                  min="1"
+                  value={form.quota}
+                  onChange={(event) => setForm({ ...form, quota: event.target.value })}
+                  required
+                />
+              </div>
+              <div className="jadwal-modal-actions">
+                {editingId && (
+                  <button type="button" className="jadwal-btn-batal" onClick={resetForm}>
+                    Batal ubah
+                  </button>
+                )}
+                <button type="submit" className="jadwal-btn-kirim" disabled={saving}>
+                  {saving ? "Menyimpan..." : editingId ? "Simpan Perubahan" : "Buat Jadwal"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
-
-      {/* Modal Detail */}
-      {modalDetail && jadwalTerpilih && (
-        <div className="jadwal-overlay" onClick={() => setModalDetail(false)}>
-          <div className="jadwal-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="jadwal-modal-head">
-              <span className="jadwal-modal-title">Detail Jadwal</span>
-              <button className="jadwal-modal-close" onClick={() => setModalDetail(false)}>✕</button>
-            </div>
-            <div className="jadwal-detail-list">
-              <div><span>Hari / Tanggal</span><strong>{jadwalTerpilih.hari}, {jadwalTerpilih.tanggal}</strong></div>
-              <div><span>Jam Praktik</span><strong>{jadwalTerpilih.jam}</strong></div>
-              <div><span>Kuota Pasien</span><strong>{jadwalTerpilih.kuota}</strong></div>
-              <div><span>Ruangan</span><strong>{jadwalTerpilih.ruangan}</strong></div>
-              <div><span>Keterangan</span><strong>{jadwalTerpilih.keterangan || "-"}</strong></div>
-            </div>
-            {jadwalTerpilih.pengajuan && (
-              <div className="jadwal-pengajuan-box">
-                <div className="jadwal-pengajuan-title">Pengajuan perubahan (menunggu admin)</div>
-                <div>Jam baru: {jadwalTerpilih.pengajuan.jamBaru}</div>
-                <div>Kuota baru: {jadwalTerpilih.pengajuan.kuotaBaru}</div>
-                <div>Alasan: {jadwalTerpilih.pengajuan.alasan}</div>
-              </div>
-            )}
-            <div className="jadwal-modal-actions">
-              <button className="jadwal-btn-batal" onClick={() => setModalDetail(false)}>Tutup</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Ajukan Perubahan */}
-      {modalAjukan && jadwalTerpilih && (
-        <div className="jadwal-overlay" onClick={() => setModalAjukan(false)}>
-          <form
-            className="jadwal-modal"
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={kirimPengajuan}
-          >
-            <div className="jadwal-modal-head">
-              <span className="jadwal-modal-title">Ajukan Perubahan Jadwal</span>
-              <button type="button" className="jadwal-modal-close" onClick={() => setModalAjukan(false)}>✕</button>
-            </div>
-            <p className="jadwal-modal-info">
-              {jadwalTerpilih.hari}, {jadwalTerpilih.tanggal}
-            </p>
-
-            <div className="jadwal-form-group">
-              <label>Jam Praktik Baru</label>
-              <input
-                type="text"
-                placeholder="Contoh: 09:00 - 13:00"
-                value={jamBaru}
-                onChange={(e) => setJamBaru(e.target.value)}
-                required
-              />
-            </div>
-            <div className="jadwal-form-group">
-              <label>Kuota Pasien Baru</label>
-              <input
-                type="number"
-                min="1"
-                value={kuotaBaru}
-                onChange={(e) => setKuotaBaru(e.target.value)}
-                required
-              />
-            </div>
-            <div className="jadwal-form-group">
-              <label>Alasan Perubahan</label>
-              <textarea
-                rows="3"
-                placeholder="Contoh: ada tugas di luar klinik"
-                value={alasan}
-                onChange={(e) => setAlasan(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="jadwal-modal-actions">
-              <button type="button" className="jadwal-btn-batal" onClick={() => setModalAjukan(false)}>Batal</button>
-              <button type="submit" className="jadwal-btn-kirim">Kirim Pengajuan</button>
-            </div>
-          </form>
-        </div>
-      )}
     </div>
   );
 }

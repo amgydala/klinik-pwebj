@@ -6,7 +6,8 @@
   background: white;
   border-radius: 12px;
   padding: 24px;
-  max-width: 600px;
+  width: 100%;
+  max-width: none;
 }
 
 .section-title {

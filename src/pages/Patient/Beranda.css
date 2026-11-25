@@ -7,22 +7,54 @@
   display: flex;
   height: 100vh;
   height: 100dvh;
-  width: 100vw;
+  width: 100%;
   overflow: hidden;
   background-color: #f8fafc;
 }
 
+.patient-layout > .sidebar {
+  width: 300px;
+  min-width: 300px;
+  flex-basis: 300px;
+}
+
+.patient-layout .header {
+  min-height: 76px;
+  padding: 14px 32px;
+}
+
+.patient-layout .header-left {
+  max-width: 640px;
+}
+
+.patient-layout .header-search-input {
+  height: 44px;
+  font-size: 15px;
+}
+
+.patient-layout .header-user-name {
+  font-size: 15px;
+}
+
+.patient-layout .header-user-avatar {
+  width: 34px;
+  height: 34px;
+}
+
 .patient-main-content {
-  flex: 1;
+  flex: 1 1 0%;
+  min-width: 0;
   height: 100%;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 
-.pasien-content {
-  padding: 24px 32px;
+.patient-layout .pasien-content {
   width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: clamp(24px, 2.4vw, 40px);
   box-sizing: border-box;
 }
 
@@ -32,21 +64,21 @@
 .pasien-welcome-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 24px 28px;
+  border-radius: 16px;
+  padding: clamp(26px, 3vw, 40px);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.045);
 }
 
 .pasien-welcome-left {
-  max-width: 600px;
+  max-width: 720px;
 }
 
 .pasien-welcome-tag {
-  font-size: 13.5px;
+  font-size: 15px;
   color: #64748b;
   font-weight: 500;
   display: block;
@@ -54,17 +86,18 @@
 }
 
 .pasien-welcome-name {
-  font-size: 26px;
+  font-size: clamp(30px, 2.4vw, 36px);
   font-weight: 800;
   color: #0f172a;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.5px;
+  margin: 0 0 10px 0;
+  letter-spacing: -0.7px;
+  line-height: 1.15;
 }
 
 .pasien-welcome-desc {
-  font-size: 13.5px;
+  font-size: 15px;
   color: #475569;
-  line-height: 1.5;
+  line-height: 1.65;
   margin: 0;
 }
 
@@ -78,9 +111,9 @@
 .pasien-profile-alert {
   background: #fffbeb;
   border: 1px solid #fde68a;
-  border-radius: 12px;
-  padding: 16px 20px;
-  margin-bottom: 20px;
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -107,22 +140,22 @@
 }
 
 .pasien-alert-title {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: #92400e;
   margin-bottom: 4px;
 }
 
 .pasien-alert-desc {
-  font-size: 13px;
+  font-size: 14px;
   color: #b45309;
   line-height: 1.4;
   margin-bottom: 8px;
 }
 
 .pasien-progress-bar {
-  width: 240px;
-  height: 8px;
+  width: min(320px, 100%);
+  height: 10px;
   background: #fef3c7;
   border-radius: 999px;
   overflow: hidden;
@@ -140,9 +173,9 @@
   background: #f59e0b;
   color: white;
   border: none;
-  padding: 10px 18px;
-  border-radius: 8px;
-  font-size: 13px;
+  padding: 12px 20px;
+  border-radius: 9px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -158,17 +191,17 @@
    --------------------------------------------------- */
 .pasien-top-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
-.pasien-card {
+.patient-layout .pasien-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  padding: 22px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border-radius: 16px;
+  padding: clamp(22px, 2vw, 30px);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.045);
   display: flex;
   flex-direction: column;
 }
@@ -177,23 +210,23 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .pasien-card-title-with-icon {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
+  gap: 12px;
+  font-size: 15px;
   font-weight: 700;
   color: #1e293b;
   letter-spacing: 0.3px;
 }
 
 .pasien-card-header-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   background-color: #f1f5f9;
   display: flex;
   align-items: center;
@@ -211,43 +244,51 @@
 .pasien-blood-type-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 14px;
+  margin-bottom: 20px;
 }
 
 .pasien-blood-type-label {
-  font-size: 14px;
+  font-size: 15px;
   color: #64748b;
   font-weight: 500;
 }
 
 .pasien-blood-type-badge {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 3px solid #334155;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 17px;
+  font-size: 19px;
   font-weight: 800;
   color: #0f172a;
+}
+
+.pasien-blood-type-placeholder {
+  width: auto;
+  min-width: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
 /* Allergy Chips */
 .pasien-allergy-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 
 .pasien-allergy-chip {
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
+  border-radius: 8px;
+  padding: 8px 13px;
+  font-size: 13.5px;
   font-weight: 600;
   color: #334155;
 }
@@ -256,21 +297,21 @@
 .pasien-info-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 16px;
   margin-top: auto;
   border-top: 1px dashed #e2e8f0;
-  padding-top: 14px;
+  padding-top: 18px;
 }
 
 .pasien-info-label {
-  font-size: 11.5px;
+  font-size: 13px;
   font-weight: 500;
   color: #64748b;
-  margin-bottom: 2px;
+  margin-bottom: 5px;
 }
 
 .pasien-info-value {
-  font-size: 13.5px;
+  font-size: 15px;
   font-weight: 600;
   color: #1e293b;
 }
@@ -281,17 +322,17 @@
 .pasien-antrean-box {
   background: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 16px;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
 }
 
 .pasien-antrean-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
-  padding-bottom: 10px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -302,14 +343,14 @@
 }
 
 .pasien-status-dot {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background-color: #22c55e;
 }
 
 .pasien-status-text {
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #334155;
   letter-spacing: 0.3px;
@@ -319,7 +360,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 14px;
   color: #64748b;
   font-weight: 600;
 }
@@ -328,18 +369,18 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
-  padding: 5px 0;
+  font-size: 15px;
+  padding: 8px 0;
   color: #334155;
 }
 
 .pasien-antrean-row-icon {
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .pasien-antrean-row-label {
   color: #64748b;
-  min-width: 90px;
+  min-width: 104px;
 }
 
 .pasien-antrean-row-val {
@@ -351,14 +392,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 10px;
-  padding-top: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
   border-top: 1px dashed #e2e8f0;
 }
 
 .pasien-antrean-badge-large {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 800;
   color: #0f172a;
   letter-spacing: 1px;
@@ -369,11 +410,11 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  padding: 12px 18px;
+  padding: 15px 20px;
   background-color: #475569;
   color: #ffffff;
   border-radius: 9px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.4px;
   text-decoration: none;
@@ -400,8 +441,8 @@
   background: transparent;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 12px;
+  padding: 8px 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #475569;
   cursor: pointer;
@@ -421,13 +462,14 @@
 
 .pasien-table {
   width: 100%;
+  min-width: 760px;
   border-collapse: collapse;
 }
 
 .pasien-table th {
   text-align: left;
-  padding: 12px 14px;
-  font-size: 12px;
+  padding: 14px 16px;
+  font-size: 13px;
   font-weight: 600;
   color: #64748b;
   background-color: #f8fafc;
@@ -435,8 +477,8 @@
 }
 
 .pasien-table td {
-  padding: 14px 14px;
-  font-size: 13.5px;
+  padding: 17px 16px;
+  font-size: 14.5px;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
 }
@@ -444,11 +486,11 @@
 .table-cell-with-icon {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .table-icon {
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .table-main-text {
@@ -457,7 +499,7 @@
 }
 
 .table-sub-text {
-  font-size: 11.5px;
+  font-size: 13px;
   color: #64748b;
   margin-top: 1px;
 }
@@ -465,9 +507,9 @@
 .btn-soap-view {
   background: #ffffff;
   border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12.5px;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 13.5px;
   font-weight: 600;
   color: #334155;
   cursor: pointer;
@@ -503,7 +545,7 @@
   background: white;
   border-radius: 16px;
   width: 100%;
-  max-width: 520px;
+  max-width: 640px;
   max-height: 90vh;
   overflow-y: auto;
   padding: 28px 28px;
@@ -536,13 +578,13 @@
 
 .soap-block p {
   margin: 6px 0 0;
-  font-size: 13px;
+  font-size: 14px;
   color: #334155;
   line-height: 1.45;
 }
 
 .soap-badge-s, .soap-badge-o, .soap-badge-a, .soap-badge-p {
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   padding: 2px 6px;
@@ -565,14 +607,14 @@
 
 .soap-prescriptions h4 {
   margin: 0 0 8px;
-  font-size: 13px;
+  font-size: 14px;
   color: #166534;
 }
 
 .soap-prescriptions ul {
   margin: 0;
   padding-left: 18px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: #15803d;
 }
 
@@ -580,12 +622,41 @@
    RESPONSIVE BREAKPOINTS
    --------------------------------------------------- */
 @media (max-width: 900px) {
+  .patient-layout > .sidebar {
+    width: min(300px, calc(100vw - 48px));
+    min-width: 0;
+    flex-basis: auto;
+  }
+
+  .patient-layout .header {
+    min-height: 60px;
+    padding: 10px 16px;
+  }
+
+  .patient-layout .header-left {
+    max-width: 520px;
+  }
+
+  .patient-layout .header-search-input {
+    height: 40px;
+    font-size: 13.5px;
+  }
+
+  .patient-layout .header-user-name {
+    font-size: 13.5px;
+  }
+
+  .patient-layout .header-user-avatar {
+    width: 28px;
+    height: 28px;
+  }
+
   .pasien-content {
-    padding: 16px 16px;
+    padding: 24px;
   }
 
   .pasien-top-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .pasien-welcome-illustration {
@@ -594,20 +665,70 @@
 }
 
 @media (max-width: 640px) {
-  .pasien-content {
-    padding: 14px 12px;
+  #root .patient-layout .pasien-content {
+    padding: 18px 14px 24px;
   }
 
   .pasien-welcome-card {
-    padding: 18px 16px;
+    padding: 22px 20px;
   }
 
   .pasien-welcome-name {
-    font-size: 22px;
+    font-size: 28px;
   }
 
-  .pasien-card {
+  .pasien-welcome-tag,
+  .pasien-welcome-desc {
+    font-size: 14px;
+  }
+
+  .patient-layout .pasien-card {
+    padding: 20px;
+  }
+
+  .pasien-card-title-with-icon {
+    font-size: 14px;
+  }
+
+  .pasien-info-grid {
+    gap: 14px 10px;
+  }
+
+  .pasien-antrean-box {
     padding: 16px;
+  }
+
+  .pasien-antrean-row-label {
+    min-width: 86px;
+  }
+
+  .pasien-antrean-row-val,
+  .pasien-antrean-detail-row {
+    font-size: 14px;
+  }
+
+  .pasien-antrean-nomor-wrap {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .pasien-antrean-badge-large {
+    font-size: 28px;
+  }
+
+  .pasien-table {
+    min-width: 700px;
+  }
+
+  .pasien-table th {
+    padding: 13px 12px;
+    font-size: 12.5px;
+  }
+
+  .pasien-table td {
+    padding: 14px 12px;
+    font-size: 14px;
   }
 
   .pasien-profile-alert {
@@ -622,5 +743,17 @@
   .pasien-btn-lengkapi {
     width: 100%;
     text-align: center;
+  }
+
+  .pasien-profile-alert {
+    padding: 18px;
+  }
+
+  .pasien-alert-title {
+    font-size: 16px;
+  }
+
+  .pasien-alert-desc {
+    font-size: 13.5px;
   }
 }

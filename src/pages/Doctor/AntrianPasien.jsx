@@ -1,118 +1,215 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import Badge from "../../components/Badge";
-import { doctorMenu, doctorNama, antreanDokterAwal } from "../../data/mockData";
+import { doctorMenu } from "../../data/mockData";
+import { getDoctorAppointments, getCurrentUser, updateAppointmentStatus } from "../../data/authService";
 import "./AntrianPasien.css";
 
-const badgeVariant = {
-  Menunggu: "warning",
-  "Sedang Diperiksa": "info",
-  Selesai: "success",
+const today = () => {
+  const date = new Date();
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 };
 
-const formatTanggal = (tanggal) =>
-  new Date(tanggal + "T00:00:00").toLocaleDateString("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+const statusLabels = {
+  waiting: "Menunggu",
+  called: "Dipanggil",
+  in_consultation: "Sedang Diperiksa",
+  completed: "Selesai",
+};
+
+const statusVariants = {
+  waiting: "warning",
+  called: "info",
+  in_consultation: "info",
+  completed: "success",
+};
+
+const getId = (value) => value?.id || value?._id || value || "";
+const getPatientId = (appointment) =>
+  getId(appointment.patient_id || appointment.patient);
+const getPatientName = (appointment) =>
+  appointment.patient?.name ||
+  appointment.patient?.user?.name ||
+  appointment.patient_name ||
+  "Pasien";
+const getAppointmentTime = (appointment) =>
+  appointment.practice_start_time ||
+  appointment.schedule?.start_time ||
+  appointment.start_time ||
+  "-";
 
 function AntrianPasien() {
   const navigate = useNavigate();
-  const [antrean, setAntrean] = useState(antreanDokterAwal);
-  const [tanggal, setTanggal] = useState("2026-09-21");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("Semua");
+  const user = getCurrentUser();
+  const doctorId =
+    user?.doctor_profile?.id ||
+    user?.doctor_profile?._id ||
+    (user?.role === "doctor" ? user?.id : null);
+  const [appointments, setAppointments] = useState([]);
+  const [date, setDate] = useState(today);
+  const [search, setSearch] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [busyId, setBusyId] = useState("");
 
-  const adaPasienDiperiksa = antrean.some(
-    (p) => p.tanggal === tanggal && p.status === "Sedang Diperiksa"
-  );
+  const loadAppointments = useCallback(async () => {
+    if (!doctorId) {
+      setError("Profil dokter tidak memiliki ID; silakan masuk kembali atau hubungi administrator.");
+      setLoading(false);
+      return;
+    }
 
-  const dataTampil = antrean.filter(
-    (p) =>
-      p.tanggal === tanggal &&
-      p.nama.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      (filterStatus === "Semua" || p.status === filterStatus)
-  );
+    setLoading(true);
+    setError("");
+    try {
+      const rows = await getDoctorAppointments({ date, doctorId });
+      const doctorProfileId = String(getId(user?.doctor_profile) || "");
+      const doctorUserId = String(user?.id || "");
+      const assigned = rows.filter((appointment) => {
+        const assignedId = String(getId(appointment.doctor_id || appointment.doctor));
+        return (
+          (doctorProfileId && assignedId === doctorProfileId) ||
+          (doctorUserId && assignedId === doctorUserId)
+        );
+      });
+      setAppointments(assigned);
+    } catch (requestError) {
+      setAppointments([]);
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [date, doctorId]);
 
-  const panggilPasien = (id) => {
-    setAntrean((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status: "Sedang Diperiksa" } : p))
-    );
+  useEffect(() => {
+    loadAppointments();
+  }, [loadAppointments]);
+
+  const shownAppointments = appointments.filter((appointment) => {
+    const statusMatches =
+      filterStatus === "all" || appointment.status === filterStatus;
+    const searchMatches = getPatientName(appointment)
+      .toLowerCase()
+      .includes(search.toLowerCase());
+    return statusMatches && searchMatches;
+  });
+
+  const changeStatus = async (appointment, status) => {
+    const id = getId(appointment);
+    setBusyId(id);
+    setError("");
+    try {
+      await updateAppointmentStatus(id, status);
+      await loadAppointments();
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setBusyId("");
+    }
   };
 
-  const renderAksi = (p) => {
-    if (p.status === "Menunggu") {
+  const actionFor = (appointment) => {
+    if (appointment.status === "waiting") {
       return (
         <button
           className="antrian-btn"
-          disabled={adaPasienDiperiksa}
-          title={adaPasienDiperiksa ? "Selesaikan pasien yang sedang diperiksa dulu" : ""}
-          onClick={() => panggilPasien(p.id)}
+          disabled={busyId === getId(appointment)}
+          onClick={() => changeStatus(appointment, "called")}
         >
           Panggil
         </button>
       );
     }
-    if (p.status === "Sedang Diperiksa") {
+    if (appointment.status === "called") {
+      return (
+        <>
+          <button
+            className="antrian-btn antrian-btn-utama"
+            disabled={busyId === getId(appointment)}
+            onClick={() => changeStatus(appointment, "in_consultation")}
+          >
+            Mulai konsultasi
+          </button>{" "}
+          <button
+            className="antrian-btn"
+            disabled={busyId === getId(appointment)}
+            onClick={() => changeStatus(appointment, "waiting")}
+          >
+            Kembali menunggu
+          </button>
+        </>
+      );
+    }
+    if (appointment.status === "in_consultation") {
       return (
         <button
           className="antrian-btn antrian-btn-utama"
-          onClick={() => navigate("/doctor/form-soap")}
+          onClick={() =>
+            navigate("/doctor/form-soap", { state: { appointment } })
+          }
         >
-          Periksa
+          Isi SOAP
         </button>
       );
     }
     return (
       <button
         className="antrian-btn"
-        onClick={() => navigate("/doctor/rekam-medis")}
+        onClick={() =>
+          navigate("/doctor/rekam-medis", {
+            state: { patientId: getPatientId(appointment) },
+          })
+        }
       >
-        Lihat
+        Riwayat
       </button>
     );
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div style={{ display: "flex", height: "100dvh" }}>
       <Sidebar menuItems={doctorMenu} />
-      <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
+      <div style={{ flex: 1, height: "100dvh", minWidth: 0, overflowY: "auto" }}>
         <Header
-          userName={doctorNama}
-          searchValue={searchTerm}
-          onSearchChange={setSearchTerm}
+          userName={user?.name || "Dokter"}
+          searchValue={search}
+          onSearchChange={setSearch}
           searchPlaceholder="Cari nama pasien..."
         />
         <div className="antrian-content">
           <h1 className="antrian-title">Antrian Pasien</h1>
           <p className="antrian-subtitle">
-            Daftar pasien yang terdaftar pada tanggal praktik kamu.
+            Antrean yang ditugaskan kepada Anda pada tanggal praktik terpilih.
           </p>
+          {error && (
+            <div role="alert" className="antrian-kosong" style={{ color: "#b42318" }}>
+              {error}
+            </div>
+          )}
 
           <div className="antrian-card">
             <div className="antrian-card-head">
               <div>
                 <div className="antrian-card-title">Daftar Antrian</div>
-                <div className="antrian-card-date">{formatTanggal(tanggal)}</div>
+                <div className="antrian-card-date">{date}</div>
               </div>
               <div className="antrian-filter">
                 <select
                   value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
+                  onChange={(event) => setFilterStatus(event.target.value)}
                 >
-                  <option value="Semua">Semua status</option>
-                  <option value="Menunggu">Menunggu</option>
-                  <option value="Sedang Diperiksa">Sedang Diperiksa</option>
-                  <option value="Selesai">Selesai</option>
+                  <option value="all">Semua status</option>
+                  {Object.entries(statusLabels).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
                 </select>
                 <input
                   type="date"
-                  value={tanggal}
-                  onChange={(e) => setTanggal(e.target.value)}
+                  value={date}
+                  onChange={(event) => setDate(event.target.value)}
                 />
               </div>
             </div>
@@ -129,26 +226,30 @@ function AntrianPasien() {
                 </tr>
               </thead>
               <tbody>
-                {dataTampil.map((p) => (
-                  <tr key={p.id}>
-                    <td>{p.noAntrean}</td>
-                    <td>{p.nama}</td>
-                    <td>{p.jam}</td>
-                    <td>{p.keluhan}</td>
+                {shownAppointments.map((appointment) => (
+                  <tr key={getId(appointment)}>
+                    <td>{appointment.queue_number || "-"}</td>
+                    <td>{getPatientName(appointment)}</td>
+                    <td>{getAppointmentTime(appointment)}</td>
+                    <td>{appointment.complaint || "-"}</td>
                     <td>
-                      <Badge text={p.status} variant={badgeVariant[p.status]} />
+                      <Badge
+                        text={statusLabels[appointment.status] || appointment.status}
+                        variant={statusVariants[appointment.status] || "default"}
+                      />
                     </td>
-                    <td>{renderAksi(p)}</td>
+                    <td>{actionFor(appointment)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            {dataTampil.length === 0 && (
+            {!loading && shownAppointments.length === 0 && (
               <div className="antrian-kosong">
-                Tidak ada antrean yang cocok untuk tanggal dan filter ini.
+                {error ? "Antrean tidak ditampilkan." : "Tidak ada antrean pada tanggal dan filter ini."}
               </div>
             )}
+            {loading && <div className="antrian-kosong">Memuat antrean...</div>}
           </div>
         </div>
       </div>

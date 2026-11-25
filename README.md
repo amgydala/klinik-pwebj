@@ -2,6 +2,20 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Integrasi Backend
+
+Frontend menggunakan `http://127.0.0.1:8000/api` sebagai URL API bawaan. Untuk backend di alamat lain, atur `REACT_APP_API_BASE_URL` (contoh: `http://127.0.0.1:8000/api`) sebelum menjalankan atau membangun aplikasi.
+
+Alur pasien yang terhubung mencakup registrasi dan login JWT, profil pasien, pembuatan serta konfirmasi janji temu, riwayat rekam medis, dan daftar/detail tagihan. Request terautentikasi mengirim token sebagai `Authorization: Bearer <token>`.
+
+Alur dokter mencakup jadwal, antrean/status kunjungan, SOAP, resep, dan riwayat per pasien. Alur apoteker mencakup inventaris obat/batch, penerbitan dan detail tagihan, pembayaran, dan riwayat transaksi. Halaman admin terhubung ke antrean, audit log, jadwal dokter, inventaris, dan billing.
+
+Pendaftaran staf tidak ditampilkan dalam form registrasi pasien. Admin memiliki halaman khusus di `/admin/registrasi-staf`, yang dilindungi role admin. Form pendaftaran di halaman tersebut dinonaktifkan karena backend belum menyediakan endpoint pembuatan akun dokter/apoteker yang memvalidasi token admin. Endpoint dokter yang masih menggunakan secret bukan endpoint admin, sedangkan `/register` hanya menerima role `patient`.
+
+API yang terdokumentasi belum menyediakan daftar resep masuk atau operasi restock batch untuk obat yang sudah ada. Penerbitan billing memerlukan ID appointment secara manual karena kontrak tidak menyediakan endpoint daftar appointment selesai untuk apoteker/kasir. Antrean pada UI dokter menyaring hasil berdasarkan ID profil dokter.
+
+Pastikan endpoint pendaftaran staf berikutnya hanya dapat digunakan dengan token admin dan memvalidasi role di backend, bukan hanya mengandalkan route guard frontend.
+
 ## Available Scripts
 
 In the project directory, you can run:

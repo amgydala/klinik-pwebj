@@ -19,5 +19,9 @@ test("lists the routes that can be opened for Figma export", () => {
     "href",
     "/doctor/form-soap"
   );
-  expect(screen.getAllByRole("link")).toHaveLength(22);
+  expect(
+    screen.getByRole("link", { name: "Registrasi Dokter / Apoteker" })
+  ).toHaveAttribute("href", "/admin/registrasi-staf");
+  expect(screen.queryByRole("link", { name: "Halaman Registrasi Dokter / Apoteker" })).not.toBeInTheDocument();
+  expect(screen.getAllByRole("link")).toHaveLength(23);
 });

@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link, Navigate } from "react-router-dom";
 import "./App.css";
+import { getAccessToken, getCurrentUser } from "./data/authService";
 
 // Auth
 import Login from "./pages/Auth/Login";
@@ -32,6 +33,7 @@ import DoctorRekamMedis from "./pages/Doctor/RekamMedis";
 
 // Admin
 import AdminBeranda from "./pages/Admin/Beranda";
+import AdminRegistrasiStaf from "./pages/Admin/RegistrasiStaf";
 
 const pageDirectory = [
   {
@@ -82,9 +84,18 @@ const pageDirectory = [
     role: "Admin",
     pages: [
       { path: "/admin/beranda", label: "Dashboard Admin" },
+      { path: "/admin/registrasi-staf", label: "Registrasi Dokter / Apoteker" },
     ],
   },
 ];
+
+function RequireRole({ role, children }) {
+  const user = getCurrentUser();
+  if (!getAccessToken() || user?.role !== role) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+}
 
 function App() {
   return (
@@ -157,32 +168,33 @@ function App() {
         <Route path="/register" element={<Register />} />
 
         {/* Cashier */}
-        <Route path="/cashier/beranda" element={<CashierBeranda />} />
-        <Route path="/cashier/riwayat-billing" element={<RiwayatBilling />} />
-        <Route path="/cashier/tagihan-baru" element={<TagihanBaru />} />
+        <Route path="/cashier/beranda" element={<RequireRole role="pharmacist"><CashierBeranda /></RequireRole>} />
+        <Route path="/cashier/riwayat-billing" element={<RequireRole role="pharmacist"><RiwayatBilling /></RequireRole>} />
+        <Route path="/cashier/tagihan-baru" element={<RequireRole role="pharmacist"><TagihanBaru /></RequireRole>} />
 
         {/* Apoteker */}
-        <Route path="/apoteker/beranda" element={<ApotekerBeranda />} />
-        <Route path="/apoteker/inventaris-obat" element={<InventarisObat />} />
-        <Route path="/apoteker/tambah-obat" element={<TambahObat />} />
-        <Route path="/apoteker/resep-masuk" element={<ResepMasuk />} />
-        <Route path="/apoteker/riwayat-transaksi" element={<RiwayatTransaksi />} />
+        <Route path="/apoteker/beranda" element={<RequireRole role="pharmacist"><ApotekerBeranda /></RequireRole>} />
+        <Route path="/apoteker/inventaris-obat" element={<RequireRole role="pharmacist"><InventarisObat /></RequireRole>} />
+        <Route path="/apoteker/tambah-obat" element={<RequireRole role="pharmacist"><TambahObat /></RequireRole>} />
+        <Route path="/apoteker/resep-masuk" element={<RequireRole role="pharmacist"><ResepMasuk /></RequireRole>} />
+        <Route path="/apoteker/riwayat-transaksi" element={<RequireRole role="pharmacist"><RiwayatTransaksi /></RequireRole>} />
 
         {/* Patient */}
-        <Route path="/patient/beranda" element={<PatientBeranda />} />
-        <Route path="/patient/daftar-baru" element={<PatientDaftarBaru />} />
-        <Route path="/patient/riwayat-medis" element={<PatientRiwayatMedis />} />
-        <Route path="/patient/tagihan" element={<PatientTagihan />} />
+        <Route path="/patient/beranda" element={<RequireRole role="patient"><PatientBeranda /></RequireRole>} />
+        <Route path="/patient/daftar-baru" element={<RequireRole role="patient"><PatientDaftarBaru /></RequireRole>} />
+        <Route path="/patient/riwayat-medis" element={<RequireRole role="patient"><PatientRiwayatMedis /></RequireRole>} />
+        <Route path="/patient/tagihan" element={<RequireRole role="patient"><PatientTagihan /></RequireRole>} />
 
         {/* Doctor */}
-        <Route path="/doctor/beranda" element={<DoctorBeranda />} />
-        <Route path="/doctor/antrian-pasien" element={<DoctorAntrianPasien />} />
-        <Route path="/doctor/jadwal-praktik" element={<DoctorJadwalPraktik />} />
-        <Route path="/doctor/form-soap" element={<DoctorFormSOAP />} />
-        <Route path="/doctor/rekam-medis" element={<DoctorRekamMedis />} />
+        <Route path="/doctor/beranda" element={<RequireRole role="doctor"><DoctorBeranda /></RequireRole>} />
+        <Route path="/doctor/antrian-pasien" element={<RequireRole role="doctor"><DoctorAntrianPasien /></RequireRole>} />
+        <Route path="/doctor/jadwal-praktik" element={<RequireRole role="doctor"><DoctorJadwalPraktik /></RequireRole>} />
+        <Route path="/doctor/form-soap" element={<RequireRole role="doctor"><DoctorFormSOAP /></RequireRole>} />
+        <Route path="/doctor/rekam-medis" element={<RequireRole role="doctor"><DoctorRekamMedis /></RequireRole>} />
 
         {/* Admin */}
-        <Route path="/admin/beranda" element={<AdminBeranda />} />
+        <Route path="/admin/beranda" element={<RequireRole role="admin"><AdminBeranda /></RequireRole>} />
+        <Route path="/admin/registrasi-staf" element={<RequireRole role="admin"><AdminRegistrasiStaf /></RequireRole>} />
       </Routes>
     </BrowserRouter>
   );

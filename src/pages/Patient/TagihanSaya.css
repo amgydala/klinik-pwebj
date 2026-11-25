@@ -172,6 +172,35 @@
   font-size: 14px;
 }
 
+.billing-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.billing-modal {
+  width: min(100%, 520px);
+  max-height: 85vh;
+  overflow: auto;
+  padding: 24px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.2);
+}
+
+.billing-modal h2 {
+  margin: 0 0 16px;
+}
+
+.billing-modal .tagihan-btn-cetak {
+  margin-top: 12px;
+}
+
 @media (max-width: 640px) {
   .tagihan-page-head {
     flex-direction: column;

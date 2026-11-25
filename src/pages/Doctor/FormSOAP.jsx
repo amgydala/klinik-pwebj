@@ -1,251 +1,287 @@
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { doctorNama, pasienPeriksaList, daftarObatResep } from "../../data/mockData";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import {
+  createMedicalRecord,
+  getCurrentUser,
+  getMedicines,
+  updateAppointmentStatus,
+} from "../../data/authService";
 import "./FormSOAP.css";
 
-const formKosong = {
+const getId = (value) => value?.id || value?._id || value || "";
+const patientName = (appointment) =>
+  appointment?.patient?.name ||
+  appointment?.patient?.user?.name ||
+  appointment?.patient_name ||
+  "Pasien";
+const stockTotal = (medicine) =>
+  (medicine.batches || []).reduce((total, batch) => total + Number(batch.stock || 0), 0);
+
+const emptyForm = {
   subjective: "",
   objective: "",
   assessment: "",
   plan: "",
-  diagnosaUtama: "",
 };
 
 function FormSOAP() {
   const navigate = useNavigate();
-  const formRef = useRef(null);
+  const { state } = useLocation();
+  const user = getCurrentUser();
+  const appointment = state?.appointment;
+  const [currentAppointment, setCurrentAppointment] = useState(appointment);
+  const [form, setForm] = useState(emptyForm);
+  const [medicines, setMedicines] = useState([]);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [medicineId, setMedicineId] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [loadingMedicines, setLoadingMedicines] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [error, setError] = useState("");
 
-  const [indeks, setIndeks] = useState(0);
-  const [form, setForm] = useState(formKosong);
-  const [resep, setResep] = useState([]);
-  const [obatDipilih, setObatDipilih] = useState(daftarObatResep[0]);
-  const [jumlah, setJumlah] = useState(1);
-  const [aturan, setAturan] = useState("");
-  const [pesan, setPesan] = useState("");
+  useEffect(() => {
+    getMedicines()
+      .then((items) => {
+        const available = items.filter((medicine) => stockTotal(medicine) > 0);
+        setMedicines(available);
+        setMedicineId(available[0]?.id || available[0]?._id || "");
+      })
+      .catch((requestError) => setError(requestError.message))
+      .finally(() => setLoadingMedicines(false));
+  }, []);
 
-  const pasien = pasienPeriksaList[indeks];
-  const adaPasienBerikutnya = indeks < pasienPeriksaList.length - 1;
+  const addPrescription = () => {
+    if (!medicineId || Number(quantity) < 1) return;
+    setPrescriptions((current) => {
+      const existing = current.find((item) => item.medicine_id === medicineId);
+      if (existing) {
+        return current.map((item) =>
+          item.medicine_id === medicineId
+            ? { ...item, quantity: item.quantity + Number(quantity) }
+            : item
+        );
+      }
+      return [...current, { medicine_id: medicineId, quantity: Number(quantity) }];
+    });
+    setQuantity("1");
+  };
 
-  const ubahField = (nama, nilai) => setForm({ ...form, [nama]: nilai });
-
-  const tambahObat = () => {
-    if (!aturan.trim()) {
-      alert("Isi aturan pakai dulu, contoh: 3x1 sesudah makan.");
+  const save = async (event) => {
+    event.preventDefault();
+    const appointmentId = getId(currentAppointment);
+    const patientId = getId(currentAppointment?.patient_id || currentAppointment?.patient);
+    if (!appointmentId || !patientId) {
+      setError("Appointment atau ID pasien tidak tersedia. Buka form dari antrean pasien.");
       return;
     }
-    setResep([
-      ...resep,
-      { id: Date.now(), nama: obatDipilih, jumlah: Number(jumlah), aturan },
-    ]);
-    setJumlah(1);
-    setAturan("");
-  };
 
-  const hapusObat = (id) => setResep(resep.filter((r) => r.id !== id));
+    setSaving(true);
+    setError("");
+    try {
+      // Jika status janji temu belum in_consultation (misal dokter langsung membuka form),
+      // otomatis transisikan status janji temu ke in_consultation terlebih dahulu.
+      if (currentAppointment.status !== "in_consultation") {
+        await updateAppointmentStatus(appointmentId, "in_consultation");
+        setCurrentAppointment((prev) => ({ ...prev, status: "in_consultation" }));
+      }
 
-  // Kumpulan data siap kirim, formatnya disamakan dengan Riwayat Medis & Resep Masuk
-  const buatPayload = () => ({
-    pasienId: pasien.id,
-    diagnosaUtama: form.diagnosaUtama,
-    soap: {
-      subjective: form.subjective,
-      objective: form.objective,
-      assessment: form.assessment,
-      plan: form.plan,
-    },
-    resep,
-  });
-
-  const formValid = () => formRef.current.reportValidity();
-
-  const handleSimpan = (e) => {
-    e.preventDefault();
-    console.log(buatPayload());
-    alert(`Data pemeriksaan ${pasien.nama} tersimpan (belum tersambung ke backend)`);
-    navigate("/doctor/antrian-pasien");
-  };
-
-  const handleLanjut = () => {
-    if (!formValid()) return;
-    console.log(buatPayload());
-    setPesan(`Pemeriksaan ${pasien.nama} (${pasien.noAntrean}) tersimpan.`);
-    setIndeks(indeks + 1);
-    setForm(formKosong);
-    setResep([]);
-  };
-
-  const handleBatal = () => {
-    const adaIsi = Object.values(form).some((v) => v.trim() !== "") || resep.length > 0;
-    if (adaIsi && !window.confirm("Data yang sudah diisi akan hilang. Lanjut batal?")) {
-      return;
+      await createMedicalRecord({
+        appointment_id: appointmentId,
+        patient_id: patientId,
+        ...form,
+        prescriptions,
+      });
+      navigate("/doctor/antrian-pasien");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
     }
-    navigate("/doctor/antrian-pasien");
   };
+
+  const handleStartConsultation = async () => {
+    const appointmentId = getId(currentAppointment);
+    if (!appointmentId) return;
+    setUpdatingStatus(true);
+    setError("");
+    try {
+      await updateAppointmentStatus(appointmentId, "in_consultation");
+      setCurrentAppointment((prev) => ({ ...prev, status: "in_consultation" }));
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  if (!currentAppointment) {
+    return (
+      <div className="soap-content">
+        <div className="soap-card">
+          <div className="soap-card-title">Pilih pasien dari antrean</div>
+          <p>Form SOAP hanya dapat dibuka dari antrean pasien yang terdaftar.</p>
+          <Link to="/doctor/antrian-pasien">Kembali ke antrean</Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div style={{ height: "100vh", overflowY: "auto" }}>
+    <div style={{ height: "100dvh", overflowY: "auto" }}>
       <div className="soap-topbar">
-        <span>{doctorNama}</span>
+        <span>{user?.name || "Dokter"}</span>
+        <Link to="/doctor/antrian-pasien">Kembali ke antrean</Link>
       </div>
-
       <div className="soap-content">
-        {pesan && <div className="soap-pesan">{pesan}</div>}
-
+        {error && <div role="alert" className="soap-pesan">{error}</div>}
+        {currentAppointment.status !== "in_consultation" && (
+          <div
+            style={{
+              padding: "12px 16px",
+              background: "#eff6ff",
+              border: "1px solid #bfdbfe",
+              borderRadius: "8px",
+              color: "#1e40af",
+              fontSize: "13px",
+              marginBottom: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+            }}
+          >
+            <span>
+              Status antrean saat ini: <strong>{currentAppointment.status}</strong>. Mulai konsultasi untuk mengaktifkan sesi pemeriksaan.
+            </span>
+            <button
+              type="button"
+              onClick={handleStartConsultation}
+              disabled={updatingStatus}
+              className="antrian-btn antrian-btn-utama"
+              style={{ fontSize: "12px", padding: "6px 12px" }}
+            >
+              {updatingStatus ? "Memperbarui..." : "Mulai Konsultasi Sekarang"}
+            </button>
+          </div>
+        )}
         <div className="soap-card soap-pasien">
           <div className="soap-card-title">Data Pasien Aktif</div>
-          <div className="soap-pasien-nomor">{pasien.noAntrean}</div>
-          <div className="soap-pasien-nama">{pasien.nama}</div>
+          <div className="soap-pasien-nomor">{currentAppointment.queue_number || "-"}</div>
+          <div className="soap-pasien-nama">{patientName(currentAppointment)}</div>
           <div className="soap-pasien-meta">
-            Jam periksa {pasien.jam} &middot; Penjamin {pasien.penjamin}
+            Jam periksa {currentAppointment.practice_start_time || "-"} &middot; Penjamin {currentAppointment.guarantor || "-"}
           </div>
           <div className="soap-pasien-keluhan">
             <span>Keluhan utama</span>
-            <strong>{pasien.keluhan}</strong>
+            <strong>{currentAppointment.complaint || "-"}</strong>
           </div>
         </div>
 
-        <form ref={formRef} onSubmit={handleSimpan}>
+        <form onSubmit={save}>
           <div className="soap-card">
             <div className="soap-card-title">Diagnosis SOAP Pasien</div>
-
             <div className="soap-grid">
-              <div className="soap-group">
-                <label>Subjective (S)</label>
-                <textarea
-                  rows="4"
-                  placeholder="Keluhan yang disampaikan pasien"
-                  value={form.subjective}
-                  onChange={(e) => ubahField("subjective", e.target.value)}
-                  required
-                />
-              </div>
-              <div className="soap-group">
-                <label>Objective (O)</label>
-                <textarea
-                  rows="4"
-                  placeholder="Hasil pemeriksaan fisik dan tanda vital"
-                  value={form.objective}
-                  onChange={(e) => ubahField("objective", e.target.value)}
-                  required
-                />
-              </div>
-              <div className="soap-group">
-                <label>Assessment (A)</label>
-                <textarea
-                  rows="4"
-                  placeholder="Penilaian atau diagnosa dokter"
-                  value={form.assessment}
-                  onChange={(e) => ubahField("assessment", e.target.value)}
-                  required
-                />
-              </div>
-              <div className="soap-group">
-                <label>Plan (P)</label>
-                <textarea
-                  rows="4"
-                  placeholder="Rencana terapi dan anjuran"
-                  value={form.plan}
-                  onChange={(e) => ubahField("plan", e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="soap-group">
-              <label>Diagnosa Utama</label>
-              <input
-                type="text"
-                placeholder="Contoh: Gastritis"
-                value={form.diagnosaUtama}
-                onChange={(e) => ubahField("diagnosaUtama", e.target.value)}
-                required
-              />
+              {[
+                ["subjective", "Subjective (S)", "Keluhan yang disampaikan pasien"],
+                ["objective", "Objective (O)", "Hasil pemeriksaan fisik dan tanda vital"],
+                ["assessment", "Assessment (A)", "Penilaian atau diagnosis dokter"],
+                ["plan", "Plan (P)", "Rencana terapi dan anjuran"],
+              ].map(([field, label, placeholder]) => (
+                <div className="soap-group" key={field}>
+                  <label htmlFor={`soap-${field}`}>{label}</label>
+                  <textarea
+                    id={`soap-${field}`}
+                    rows="4"
+                    placeholder={placeholder}
+                    value={form[field]}
+                    onChange={(event) => setForm({ ...form, [field]: event.target.value })}
+                    required
+                  />
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="soap-card">
             <div className="soap-card-title">Resep Obat</div>
-
-            {resep.length > 0 && (
+            {prescriptions.length > 0 && (
               <table className="soap-table">
                 <thead>
-                  <tr>
-                    <th>Obat</th>
-                    <th>Jumlah</th>
-                    <th>Aturan Pakai</th>
-                    <th></th>
-                  </tr>
+                  <tr><th>Obat</th><th>Jumlah</th><th></th></tr>
                 </thead>
                 <tbody>
-                  {resep.map((r) => (
-                    <tr key={r.id}>
-                      <td>{r.nama}</td>
-                      <td>{r.jumlah}</td>
-                      <td>{r.aturan}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="soap-btn-hapus"
-                          onClick={() => hapusObat(r.id)}
-                        >
-                          Hapus
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {prescriptions.map((item) => {
+                    const medicine = medicines.find(
+                      (candidate) => (candidate.id || candidate._id) === item.medicine_id
+                    );
+                    return (
+                      <tr key={item.medicine_id}>
+                        <td>{medicine?.name || item.medicine_id}</td>
+                        <td>{item.quantity}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="soap-btn-hapus"
+                            onClick={() =>
+                              setPrescriptions((current) =>
+                                current.filter((prescription) => prescription !== item)
+                              )
+                            }
+                          >
+                            Hapus
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}
-
-            {resep.length === 0 && (
-              <div className="soap-kosong">
-                Belum ada obat. Resep boleh kosong kalau pasien tidak perlu obat.
-              </div>
+            {prescriptions.length === 0 && (
+              <div className="soap-kosong">Tidak ada resep untuk kunjungan ini.</div>
             )}
-
             <div className="soap-tambah-row">
-              <select value={obatDipilih} onChange={(e) => setObatDipilih(e.target.value)}>
-                {daftarObatResep.map((o) => (
-                  <option key={o} value={o}>{o}</option>
+              <select
+                aria-label="Pilih obat"
+                value={medicineId}
+                onChange={(event) => setMedicineId(event.target.value)}
+                disabled={loadingMedicines || medicines.length === 0}
+              >
+                {medicines.map((medicine) => (
+                  <option key={medicine.id || medicine._id} value={medicine.id || medicine._id}>
+                    {medicine.name} (stok {stockTotal(medicine)})
+                  </option>
                 ))}
               </select>
               <input
+                aria-label="Jumlah obat"
                 type="number"
                 min="1"
-                className="soap-input-jumlah"
-                value={jumlah}
-                onChange={(e) => setJumlah(e.target.value)}
+                value={quantity}
+                onChange={(event) => setQuantity(event.target.value)}
               />
-              <input
-                type="text"
-                placeholder="Aturan pakai, contoh: 3x1 sesudah makan"
-                value={aturan}
-                onChange={(e) => setAturan(e.target.value)}
-              />
-              <button type="button" className="soap-btn-tambah" onClick={tambahObat}>
+              <button
+                type="button"
+                className="soap-btn-tambah"
+                onClick={addPrescription}
+                disabled={!medicineId || loadingMedicines}
+              >
                 + Tambah
               </button>
             </div>
+            {!loadingMedicines && medicines.length === 0 && (
+              <div className="soap-kosong">Tidak ada obat dengan stok tersedia.</div>
+            )}
           </div>
 
           <div className="soap-action-row">
-            <button type="button" className="soap-btn-batal" onClick={handleBatal}>
+            <button type="button" className="soap-btn-batal" onClick={() => navigate("/doctor/antrian-pasien")}>
               Batal
             </button>
-            <div className="soap-action-kanan">
-              <button
-                type="button"
-                className="soap-btn-lanjut"
-                disabled={!adaPasienBerikutnya}
-                title={adaPasienBerikutnya ? "" : "Tidak ada pasien berikutnya"}
-                onClick={handleLanjut}
-              >
-                Lanjut Pasien Selanjutnya
-              </button>
-              <button type="submit" className="soap-btn-simpan">
-                Simpan
-              </button>
-            </div>
+            <button type="submit" className="soap-btn-simpan" disabled={saving}>
+              {saving ? "Menyimpan..." : "Simpan Rekam Medis"}
+            </button>
           </div>
         </form>
       </div>

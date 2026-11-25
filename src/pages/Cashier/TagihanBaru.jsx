@@ -1,129 +1,99 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
+import { apotekerMenu } from "../../data/mockData";
+import { createBilling, getCurrentUser } from "../../data/authService";
 import "./TagihanBaru.css";
 
-const cashierMenu = [
-  { path: "/cashier/beranda", label: "Beranda" },
-  { path: "/cashier/tagihan-baru", label: "Tagihan Baru" },
-  { path: "/cashier/riwayat-billing", label: "Riwayat Billing" },
-  { path: "/cashier/pengaturan", label: "Pengaturan" },
-];
-
-const pilihanItem = [
-  { nama: "Konsultasi Dokter", harga: 150000 },
-  { nama: "Amoxicillin 250mg", harga: 3000 },
-  { nama: "Paracetamol 500mg", harga: 5000 },
-  { nama: "Tindakan Medis", harga: 100000 },
-];
-
 function TagihanBaru() {
-  const [items, setItems] = useState([]);
-  const [pilihanTerpilih, setPilihanTerpilih] = useState(pilihanItem[0].nama);
-  const [jumlah, setJumlah] = useState(1);
+  const user = getCurrentUser();
+  const [appointmentId, setAppointmentId] = useState("");
+  const [doctorFee, setDoctorFee] = useState("");
+  const [guarantor, setGuarantor] = useState("Umum");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [createdBilling, setCreatedBilling] = useState(null);
 
-  const tambahItem = () => {
-    const item = pilihanItem.find((i) => i.nama === pilihanTerpilih);
-    setItems([
-      ...items,
-      { id: Date.now(), nama: item.nama, jumlah: jumlah, harga: item.harga },
-    ]);
-    setJumlah(1);
+  const submit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setCreatedBilling(null);
+    setLoading(true);
+    try {
+      const response = await createBilling({
+        appointment_id: appointmentId.trim(),
+        doctor_fee: Number(doctorFee),
+        guarantor: guarantor.trim(),
+      });
+      setCreatedBilling(response.billing || response);
+      setAppointmentId("");
+      setDoctorFee("");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const hapusItem = (id) => {
-    setItems(items.filter((i) => i.id !== id));
-  };
-
-  const total = items.reduce((sum, i) => sum + i.harga * i.jumlah, 0);
 
   return (
-    <div style={{ display: "flex" }}>
-      <Sidebar menuItems={cashierMenu} />
-      <div style={{ flex: 1 }}>
-        <Header userName="Kasir Nanda" />
+    <div style={{ display: "flex", height: "100dvh" }}>
+      <Sidebar menuItems={apotekerMenu} />
+      <div style={{ flex: 1, minWidth: 0, height: "100dvh", overflowY: "auto" }}>
+        <Header userName={user?.name || "Apoteker"} />
         <div className="page-content">
           <div className="form-card">
-            <div className="section-title">Informasi Pasien</div>
-            <div className="info-grid">
-              <div className="info-box">
-                <div className="info-label">Nama Pasien</div>
-                <div className="info-value">Budi Santoso</div>
+            <div className="section-title">Terbitkan Tagihan</div>
+            <p>
+              Tagihan dibuat untuk janji temu yang sudah selesai diperiksa. Backend menghitung biaya obat dari resep.
+            </p>
+            {error && <div role="alert" className="empty-state">{error}</div>}
+            {createdBilling && (
+              <div role="status" className="empty-state">
+                Tagihan berhasil dibuat: {createdBilling.id || createdBilling._id || "ID tidak dikembalikan"}.
+                {" "}<Link to="/cashier/riwayat-billing">Buka riwayat billing</Link>
               </div>
-              <div className="info-box">
-                <div className="info-label">No. Antrean</div>
-                <div className="info-value">A-03</div>
+            )}
+            <form onSubmit={submit}>
+              <div className="form-group">
+                <label htmlFor="billing-appointment">ID janji temu</label>
+                <input
+                  id="billing-appointment"
+                  value={appointmentId}
+                  onChange={(event) => setAppointmentId(event.target.value)}
+                  placeholder="ID appointment dari antrean/rekam medis"
+                  required
+                />
               </div>
-              <div className="info-box">
-                <div className="info-label">Poliklinik</div>
-                <div className="info-value">Poli Dalam</div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="billing-doctor-fee">Biaya dokter</label>
+                  <input
+                    id="billing-doctor-fee"
+                    type="number"
+                    min="0"
+                    value={doctorFee}
+                    onChange={(event) => setDoctorFee(event.target.value)}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="billing-guarantor">Penjamin</label>
+                  <input
+                    id="billing-guarantor"
+                    value={guarantor}
+                    onChange={(event) => setGuarantor(event.target.value)}
+                    required
+                  />
+                </div>
               </div>
-            </div>
-
-            <div className="section-title">Item Biaya</div>
-            <table>
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Jumlah</th>
-                  <th style={{ textAlign: "right" }}>Harga</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.nama}</td>
-                    <td>{item.jumlah}</td>
-                    <td style={{ textAlign: "right" }}>
-                      Rp {(item.harga * item.jumlah).toLocaleString("id-ID")}
-                    </td>
-                    <td>
-                      <button
-                        className="btn-hapus"
-                        onClick={() => hapusItem(item.id)}
-                      >
-                        X
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="tambah-item-row">
-              <select
-                value={pilihanTerpilih}
-                onChange={(e) => setPilihanTerpilih(e.target.value)}
-              >
-                {pilihanItem.map((item) => (
-                  <option key={item.nama} value={item.nama}>
-                    {item.nama}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                min="1"
-                value={jumlah}
-                onChange={(e) => setJumlah(Number(e.target.value))}
-              />
-              <button className="btn-tambah" onClick={tambahItem}>
-                + Tambah
-              </button>
-            </div>
-
-            <div className="total-row">
-              <span>Total Tagihan</span>
-              <span className="total-value">
-                Rp {total.toLocaleString("id-ID")}
-              </span>
-            </div>
-
-            <div className="action-row">
-              <button className="btn-batal">Batal</button>
-              <button className="btn-submit">Buat Tagihan</button>
-            </div>
+              <div className="action-row">
+                <Link to="/cashier/riwayat-billing" className="btn-batal">Riwayat billing</Link>
+                <button className="btn-submit" type="submit" disabled={loading}>
+                  {loading ? "Menerbitkan..." : "Buat Tagihan"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </div>

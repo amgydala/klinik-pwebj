@@ -1,176 +1,140 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
-import { apotekerMenu, apotekerNama, obatTerdaftar, kategoriList, satuanList } from "../../data/mockData";
+import { apotekerMenu } from "../../data/mockData";
+import { createMedicine, getCurrentUser } from "../../data/authService";
 import "./TambahObat.css";
 
+const emptyBatch = () => ({ batch_no: "", stock: "", exp_date: "" });
+
 function TambahObat() {
-  const [mode, setMode] = useState("baru"); // "baru" atau "restock"
+  const navigate = useNavigate();
+  const user = getCurrentUser();
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [basePrice, setBasePrice] = useState("");
+  const [batches, setBatches] = useState([emptyBatch()]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
-  // Form untuk obat jenis baru
-  const [namaObatBaru, setNamaObatBaru] = useState("");
-  const [kategori, setKategori] = useState(kategoriList[0]);
-  const [satuan, setSatuan] = useState(satuanList[0]);
-  const [hargaDasar, setHargaDasar] = useState("");
-  const [stokMinimal, setStokMinimal] = useState("");
+  const updateBatch = (index, field, value) => {
+    setBatches((current) =>
+      current.map((batch, batchIndex) =>
+        batchIndex === index ? { ...batch, [field]: value } : batch
+      )
+    );
+  };
 
-  // Form untuk restock
-  const [obatDipilih, setObatDipilih] = useState(obatTerdaftar[0]);
-  const [batchNo, setBatchNo] = useState("");
-  const [jumlahMasuk, setJumlahMasuk] = useState("");
-  const [tanggalKadaluarsa, setTanggalKadaluarsa] = useState("");
-  const [supplier, setSupplier] = useState("");
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (mode === "baru") {
-      console.log({ namaObatBaru, kategori, satuan, hargaDasar, stokMinimal });
-    } else {
-      console.log({ obatDipilih, batchNo, jumlahMasuk, tanggalKadaluarsa, supplier });
+  const submit = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setError("");
+    try {
+      await createMedicine({
+        name: name.trim(),
+        category: category.trim(),
+        base_price: Number(basePrice),
+        batches: batches.map((batch) => ({
+          batch_no: batch.batch_no.trim(),
+          stock: Number(batch.stock),
+          exp_date: batch.exp_date,
+        })),
+      });
+      navigate("/apoteker/inventaris-obat");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
     }
-    alert("Data berhasil disiapkan (belum tersambung ke backend)");
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh" }}>
+    <div style={{ display: "flex", height: "100dvh" }}>
       <Sidebar menuItems={apotekerMenu} />
-      <div style={{ flex: 1, height: "100vh", overflowY: "auto" }}>
-        <Header userName={apotekerNama} />
+      <div style={{ flex: 1, height: "100dvh", minWidth: 0, overflowY: "auto" }}>
+        <Header userName={user?.name || "Apoteker"} />
         <div className="page-content">
           <div className="form-card">
-            <div className="section-title">Tambah Obat</div>
+            <div className="section-title">Tambah Obat Baru</div>
+            <p>Data obat dan batch dikirim sesuai skema API.</p>
+            {error && <div role="alert" className="empty-state">{error}</div>}
+            <form onSubmit={submit}>
+              <div className="form-group">
+                <label htmlFor="medicine-name">Nama obat</label>
+                <input id="medicine-name" value={name} onChange={(event) => setName(event.target.value)} required />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="medicine-category">Kategori</label>
+                  <input id="medicine-category" value={category} onChange={(event) => setCategory(event.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="medicine-base-price">Harga dasar</label>
+                  <input
+                    id="medicine-base-price"
+                    type="number"
+                    min="0"
+                    value={basePrice}
+                    onChange={(event) => setBasePrice(event.target.value)}
+                    required
+                  />
+                </div>
+              </div>
 
-            <div className="tab-switch">
-              <button
-                className={mode === "baru" ? "tab-active" : ""}
-                onClick={() => setMode("baru")}
-              >
-                Obat Jenis Baru
-              </button>
-              <button
-                className={mode === "restock" ? "tab-active" : ""}
-                onClick={() => setMode("restock")}
-              >
-                Restock Obat Lama
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit}>
-              {mode === "baru" ? (
-                <>
+              <div className="section-title">Batch FEFO</div>
+              {batches.map((batch, index) => (
+                <div className="form-row" key={index}>
                   <div className="form-group">
-                    <label>Nama Obat</label>
+                    <label htmlFor={`batch-no-${index}`}>Nomor batch</label>
                     <input
-                      type="text"
-                      placeholder="Contoh: Amoxicillin 250mg"
-                      value={namaObatBaru}
-                      onChange={(e) => setNamaObatBaru(e.target.value)}
+                      id={`batch-no-${index}`}
+                      value={batch.batch_no}
+                      onChange={(event) => updateBatch(index, "batch_no", event.target.value)}
                       required
                     />
                   </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Kategori</label>
-                      <select value={kategori} onChange={(e) => setKategori(e.target.value)}>
-                        {kategoriList.map((k) => (
-                          <option key={k} value={k}>{k}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Satuan</label>
-                      <select value={satuan} onChange={(e) => setSatuan(e.target.value)}>
-                        {satuanList.map((s) => (
-                          <option key={s} value={s}>{s}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Harga Dasar (per satuan)</label>
-                      <input
-                        type="number"
-                        placeholder="Contoh: 150"
-                        value={hargaDasar}
-                        onChange={(e) => setHargaDasar(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Stok Minimal (buat alarm)</label>
-                      <input
-                        type="number"
-                        placeholder="Contoh: 50"
-                        value={stokMinimal}
-                        onChange={(e) => setStokMinimal(e.target.value)}
-                        required
-                      />
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <>
                   <div className="form-group">
-                    <label>Pilih Obat</label>
-                    <select value={obatDipilih} onChange={(e) => setObatDipilih(e.target.value)}>
-                      {obatTerdaftar.map((o) => (
-                        <option key={o} value={o}>{o}</option>
-                      ))}
-                    </select>
+                    <label htmlFor={`batch-stock-${index}`}>Stok</label>
+                    <input
+                      id={`batch-stock-${index}`}
+                      type="number"
+                      min="0"
+                      value={batch.stock}
+                      onChange={(event) => updateBatch(index, "stock", event.target.value)}
+                      required
+                    />
                   </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>No. Batch</label>
-                      <input
-                        type="text"
-                        placeholder="Contoh: BATCH-A03"
-                        value={batchNo}
-                        onChange={(e) => setBatchNo(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Jumlah Masuk</label>
-                      <input
-                        type="number"
-                        placeholder="Contoh: 100"
-                        value={jumlahMasuk}
-                        onChange={(e) => setJumlahMasuk(e.target.value)}
-                        required
-                      />
-                    </div>
+                  <div className="form-group">
+                    <label htmlFor={`batch-exp-${index}`}>Tanggal kedaluwarsa</label>
+                    <input
+                      id={`batch-exp-${index}`}
+                      type="date"
+                      value={batch.exp_date}
+                      onChange={(event) => updateBatch(index, "exp_date", event.target.value)}
+                      required
+                    />
                   </div>
-
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label>Tanggal Kadaluarsa (FEFO)</label>
-                      <input
-                        type="date"
-                        value={tanggalKadaluarsa}
-                        onChange={(e) => setTanggalKadaluarsa(e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Supplier / Distributor</label>
-                      <input
-                        type="text"
-                        placeholder="Contoh: PT Kimia Farma"
-                        value={supplier}
-                        onChange={(e) => setSupplier(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+                  {batches.length > 1 && (
+                    <button
+                      type="button"
+                      className="btn-batal"
+                      onClick={() => setBatches((current) => current.filter((_, i) => i !== index))}
+                    >
+                      Hapus batch
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button type="button" className="btn-edit" onClick={() => setBatches((current) => [...current, emptyBatch()])}>
+                + Tambah batch
+              </button>
 
               <div className="action-row">
-                <button type="button" className="btn-batal">Batal</button>
-                <button type="submit" className="btn-submit">Simpan</button>
+                <Link className="btn-batal" to="/apoteker/inventaris-obat">Batal</Link>
+                <button type="submit" className="btn-submit" disabled={saving}>
+                  {saving ? "Menyimpan..." : "Simpan Obat"}
+                </button>
               </div>
             </form>
           </div>

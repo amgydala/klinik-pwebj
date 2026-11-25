@@ -9,8 +9,8 @@
 }
 
 .soap-content {
-  max-width: 820px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   padding: 20px;
 }
 
